@@ -1,6 +1,6 @@
 {
   "name": "@bubblebuffer/superpawers-opencode",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Opinionated AI coding workflow system for OpenCode - subagent-driven development with fail-fast and human-in-the-loop recovery",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build",
-    "postinstall": "tsx scripts/postinstall.ts"
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
     "opencode",
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@opencode-ai/plugin": "^1.0.0",
+    "@types/node": "^25.6.0",
     "tsx": "^4.7.0",
     "typescript": "^5.0.0"
   }
