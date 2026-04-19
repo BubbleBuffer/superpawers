@@ -33,12 +33,13 @@ Use the `skill` tool. When you invoke a skill, its content is loaded and present
 
 SuperPawers defines these subagents for dispatch:
 
-| Agent | Purpose | Agent Prompt |
-|-------|---------|--------------|
-| `@superpawers:researcher` | Explores codebase, gathers context, reports findings | `agents/researcher.md` |
-| `@superpawers:implementer` | Implements tasks following TDD with isolated context | `agents/implementer.md` |
-| `@superpawers:reviewer` | Reviews code quality, spec compliance, and production readiness | `agents/reviewer.md` |
-| `@superpawers:verifier` | Runs tests, lint, and typecheck independently | `agents/verifier.md` |
+| Agent | Purpose | System Prompt |
+|-------|---------|---------------|
+| `@superpawers:researcher` | Explores codebase, gathers context, reports findings | `agents/superpawers-researcher.system.md` |
+| `@superpawers:implementer` | Implements tasks following TDD with isolated context | `agents/superpawers-implementer.system.md` |
+| `@superpawers:reviewer` | Reviews code quality, spec compliance, and production readiness | `agents/superpawers-reviewer.system.md` |
+| `@superpawers:verifier` | Runs tests, lint, and typecheck independently | `agents/superpawers-verifier.system.md` |
+| `@superpawers:planner` | Investigates codebase via researchers, produces implementation plans | `agents/superpawers-planner.system.md` |
 
 Dispatch a subagent by mentioning it:
 ```

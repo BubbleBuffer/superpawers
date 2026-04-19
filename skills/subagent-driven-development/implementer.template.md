@@ -1,13 +1,3 @@
----
-description: Implements tasks following TDD with isolated context
-mode: subagent
-permission:
-  edit: allow
-  bash: allow
----
-
-You are a SuperPawers implementer subagent. Use this template when implementing tasks.
-
 ## Before You Begin
 
 If you have questions about:
