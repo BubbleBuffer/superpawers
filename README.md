@@ -5,7 +5,7 @@ Opinionated AI coding workflow Skills and Agent for OpenCode — subagent-driven
 ## Quick Start
 
 ```bash
-npm install superpawers
+npm install @bubblebuffer/superpawers-opencode
 ```
 
 Then configure models per agent in your `~/.config/opencode/opencode.json`:
@@ -18,7 +18,7 @@ Then configure models per agent in your `~/.config/opencode/opencode.json`:
     "superpawers-reviewer": { "model": "minimax-anthropic/MiniMax-M2.7" },
     "superpawers-verifier": { "model": "minimax-anthropic/MiniMax-M2.7" }
   },
-  "plugin": ["superpawers"]
+  "plugin": ["@bubblebuffer/superpawers-opencode"]
 }
 ```
 

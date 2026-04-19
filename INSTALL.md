@@ -9,11 +9,11 @@ SuperPawers is an opinionated fork of [Superpowers](https://github.com/obra/supe
 
 ## Installation
 
-Add superpawers to the `plugin` array in your `opencode.json` (global or project-level):
+Add `@bubblebuffer/superpawers-opencode` to the `plugin` array in your `opencode.json` (global or project-level):
 
 ```json
 {
-  "plugin": ["superpawers"]
+  "plugin": ["@bubblebuffer/superpawers-opencode"]
 }
 ```
 
@@ -103,4 +103,4 @@ Superpawers updates automatically when OpenCode restarts.
 
 ## Getting Help
 
-- Report issues: https://github.com/YOUR_REPO/superpawers/issues
+- Report issues: https://github.com/BubbleBuffer/superpawers/issues
