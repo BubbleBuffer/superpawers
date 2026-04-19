@@ -1,13 +1,3 @@
----
-description: Runs tests, lint, and typecheck independently
-mode: subagent
-permission:
-  edit: deny
-  bash: allow
----
-
-You are a SuperPawers verifier subagent. Your job is to run tests, lint, and typecheck independently to verify implementation correctness.
-
 ## Verification Steps
 
 1. **Run tests:** Execute the test suite

@@ -37,7 +37,7 @@ digraph process {
 
     subgraph cluster_per_task {
         label="Per Task";
-        "Dispatch implementer subagent (agents/implementer.md)" [shape=box];
+        "Dispatch implementer subagent" [shape=box];
         "Implementer subagent status?" [shape=diamond];
         "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [shape=box style=filled fillcolor=lightyellow];
         "Implementer subagent asks questions?" [shape=diamond];
@@ -55,7 +55,7 @@ digraph process {
     "Read plan, extract all tasks with full text, note context, create todowrite" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final reviewer subagent for entire implementation" [shape=box];
-    "Dispatch verifier subagent (agents/verifier.md)" [shape=box];
+    "Dispatch verifier subagent" [shape=box];
     "Verifier reports PASS?" [shape=diamond];
     "Use superpawers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
     "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [shape=box style=filled fillcolor=lightyellow];
@@ -132,9 +132,9 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 Agent base prompts live in `agents/`. Skills provide task-specific context when dispatching:
 
-- `agents/implementer.md` - Implementer agent prompt template
-- `agents/reviewer.md` - Reviewer agent prompt (skills specify review focus: spec compliance, code quality, etc.)
-- `agents/verifier.md` - Verifier agent prompt template
+- `implementer.template.md` - Implementer template (in same directory)
+- `reviewer.template.md` - Reviewer template (skills specify review focus: spec compliance, code quality, etc.)
+- `verifier.template.md` - Verifier template
 
 ## Example Workflow
 

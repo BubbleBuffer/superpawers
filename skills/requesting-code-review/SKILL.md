@@ -31,7 +31,7 @@ HEAD_SHA=$(git rev-parse HEAD)
 
 **2. Dispatch code-reviewer subagent:**
 
-Use `@superpawers:reviewer` with template at `agents/reviewer.md`
+Use `@superpawers:reviewer` with template at `reviewer.template.md`
 
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
@@ -102,4 +102,4 @@ You: [Fix progress indicators]
 - Show code/tests that prove it works
 - Request clarification
 
-See agent prompt at: agents/reviewer.md
+See agent system prompt at: `agents/superpawers-reviewer.system.md`
