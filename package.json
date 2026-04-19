@@ -1,5 +1,5 @@
 {
-  "name": "superpawers",
+  "name": "@bubblebuffer/superpawers-opencode",
   "version": "0.1.0",
   "description": "Opinionated AI coding workflow system for OpenCode - subagent-driven development with fail-fast and human-in-the-loop recovery",
   "main": "dist/index.js",
