@@ -1,34 +1,6 @@
 # SuperPawers
 
-Opinionated AI coding workflow system for OpenCode — subagent-driven development with fail-fast and human-in-the-loop recovery.
-
-## What "Opinionated" Means
-
-SuperPawers holds strong positions on how software development should work. These aren't suggestions — they're enforced rules:
-
-### 1. Design Before Implementation
-Every project goes through brainstorming, regardless of perceived simplicity. "This is too simple to need a design" is an anti-pattern. YAGNI ruthlessly — remove unnecessary features from all designs.
-
-### 2. Test-Driven Development is Non-Negotiable
-No production code without a failing test first. Write code before the test? Delete it and start over. The RED-GREEN-REFACTOR cycle is mandatory, not optional.
-
-### 3. Evidence Over Claims
-No completion claims without fresh verification output. "Should work", "probably fixed", "seems to pass" are prohibited. If you haven't run the verification command in this message, you cannot claim it passes.
-
-### 4. Systematic Debugging Over Guess-and-Fix
-No fixes without root cause investigation first. Random fixes waste time and create new bugs. Follow the 4-phase process: Root Cause → Pattern Analysis → Hypothesis → Implementation.
-
-### 5. Subagent Isolation for Quality
-Fresh subagent per task with isolated context. Two-stage review: spec compliance first, then code quality. Never inherit session history — construct exactly what each subagent needs.
-
-### 6. Fail-Fast with Human Recovery
-When blocked, stop immediately and present structured recovery options. Never fall back to inline execution when subagent fails. Human partner controls priority over skill rules.
-
-### 7. Skill Invocation Protocol
-Even a 1% chance a skill might apply means you should invoke it. Don't rationalize your way out of using a skill. "This is just a simple question" is a red flag.
-
-### 8. Code Review as Verification, Not Performance
-Review requires technical evaluation, not emotional agreement. "You're absolutely right!" is a red flag. Verify before implementing, push back when technically wrong.
+Opinionated AI coding workflow Skills and Agent for OpenCode — subagent-driven development with fail-fast and human-in-the-loop recovery. Fork of [Superpowers](https://github.com/obra/superpowers).
 
 ## Quick Start
 
@@ -120,6 +92,28 @@ Without explicit model config, subagents inherit the caller's model. Configure m
   }
 }
 ```
+
+## Differences from Superpowers
+
+SuperPawers is an OpenCode-focused fork with these key changes:
+
+| Feature | Superpowers | SuperPawers |
+|---------|-------------|-------------|
+| **Git isolation** | Worktrees (filesystem isolation) | Branches (lightweight) |
+| **Execution** | Subagent-driven OR inline execution | Subagent-driven only |
+| **Verification** | Blocking gate before merge | Distributed throughout workflow |
+| **Platform** | Multi-platform (Claude, Codex, Cursor, Copilot, Gemini) | OpenCode only |
+| **Skills** | `superpowers:skill-name` namespace | `superpawers:skill-name` namespace |
+
+**Removed:**
+- `executing-plans` skill (inline execution)
+- `using-git-worktrees` skill (worktree awareness)
+- Multi-platform tool references and adaptations
+
+**Added:**
+- OpenCode-specific agent types (`superpawers-researcher`, `superpawers-implementer`, `superpawers-reviewer`, `superpawers-verifier`)
+- `using-git-branches` skill (branch-based isolation)
+- Researcher subagent dispatch in brainstorming
 
 ## License
 
