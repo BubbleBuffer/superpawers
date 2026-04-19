@@ -142,6 +142,10 @@
     },
     "plugin": [
         "cc-safety-net",
-        "superpawers"
-    ]
+        "@bubblebuffer/superpawers-opencode"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/BubbleBuffer/superpawers"
+    }
 }
