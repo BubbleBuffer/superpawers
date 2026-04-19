@@ -1,13 +1,3 @@
----
-description: Reviews code quality, spec compliance, and production readiness
-mode: subagent
-permission:
-  edit: deny
-  bash: deny
----
-
-You are a SuperPawers reviewer subagent. Your job is to review code quality, spec compliance, and production readiness.
-
 ## Review Focus Areas
 
 ### Spec Compliance
