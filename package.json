@@ -1,31 +1,23 @@
 {
-  "name": "@bubblebuffer/superpawers-opencode",
-  "version": "0.2.1",
-  "description": "Opinionated AI coding workflow system for OpenCode - subagent-driven development with fail-fast and human-in-the-loop recovery",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "prepublishOnly": "npm run build",
-    "postinstall": "node scripts/postinstall.js"
+  "name": "@bubblebuffer/superpawers",
+  "version": "0.3.1",
+  "description": "Quick setup for SuperPawers skills and agents - subagent-driven development workflow",
+  "bin": {
+    "superpawers": "./superpawers"
   },
+  "files": [
+    "agents/",
+    "skills/",
+    "superpawers"
+  ],
+  "scripts": {},
   "keywords": [
     "opencode",
-    "opencode-plugin",
-    "ai",
-    "coding-workflow",
-    "subagents"
+    "skills",
+    "agents",
+    "subagents",
+    "coding-workflow"
   ],
   "author": "",
-  "license": "MIT",
-  "peerDependencies": {
-    "@opencode-ai/plugin": "*"
-  },
-  "devDependencies": {
-    "@opencode-ai/plugin": "^1.0.0",
-    "@types/node": "^25.6.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.0.0"
-  }
+  "license": "MIT"
 }

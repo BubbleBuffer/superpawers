@@ -2,19 +2,25 @@
 
 Opinionated AI coding workflow Skills and Agent for OpenCode — subagent-driven development with fail-fast and human-in-the-loop recovery. Fork of [Superpowers](https://github.com/obra/superpowers).
 
-## Quick Start
+## Quick Setup
 
 ```bash
-npm install @bubblebuffer/superpawers-opencode
+npx @bubblebuffer/superpawers
 ```
 
-Add to your `opencode.json` plugins:
+This will:
+1. Detect global (`~/.config/opencode/`) and local (`./.opencode/config.json`) workspaces
+2. Copy agents to `~/.config/opencode/agents/superpawers/`
+3. Create skills symlink at `~/.config/opencode/skills/superpawers`
+4. Prompt to add agent definitions to your opencode.json
 
-```json
-{
-  "plugin": ["@bubblebuffer/superpawers-opencode"]
-}
-```
+### Options
+
+- `--global` - Use global workspace
+- `--local` - Use local workspace (current directory)
+- `--path <path>` - Use custom workspace path
+- `--yes` - Skip prompts (use defaults)
+- `--uninstall` - Remove installed files and config entries
 
 ## Example Configuration
 
@@ -86,10 +92,6 @@ SuperPawers uses `-` separator (not `:`) for agent names:
 | `test-driven-development` | TDD discipline |
 | `using-git-branches` | Branch-based isolation |
 | `dispatching-parallel-agents` | Concurrent subagent workflows |
-
-## Installation
-
-The npm package automatically symlinks skills to `~/.config/opencode/skills/superpawers/`.
 
 ## License
 

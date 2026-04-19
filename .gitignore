@@ -27,8 +27,3 @@ npm-debug.log*
 coverage/
 
 # Temporary files
-*.tmp
-*.temp
-
-# Planning and specs (working documents)
-.superpawers/
