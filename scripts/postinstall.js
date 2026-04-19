@@ -33,10 +33,17 @@ function linkAgents() {
 function linkSkills() {
   ensureDir(path.dirname(SKILLS_TARGET));
   if (fs.existsSync(SKILLS_TARGET)) {
-    fs.rmSync(SKILLS_TARGET, { recursive: true, force: true });
+    const stat = fs.lstatSync(SKILLS_TARGET);
+    if (stat.isSymbolicLink()) {
+      fs.unlinkSync(SKILLS_TARGET);
+    } else if (stat.isDirectory()) {
+      fs.rmSync(SKILLS_TARGET, { recursive: true });
+    } else {
+      fs.unlinkSync(SKILLS_TARGET);
+    }
   }
-  fs.cpSync(SKILLS_SOURCE, SKILLS_TARGET, { recursive: true });
-  console.log("Copied: " + SKILLS_TARGET + " <- " + SKILLS_SOURCE);
+  fs.symlinkSync(SKILLS_SOURCE, SKILLS_TARGET, "junction");
+  console.log("Symlinked: " + SKILLS_TARGET + " -> " + SKILLS_SOURCE);
 }
 
 linkAgents();
