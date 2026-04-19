@@ -87,15 +87,24 @@ function copyAgents(targetDir) {
   }
 }
 
-function symlinkSkills(target, sourceDir) {
+function copySkills(target, sourceDir) {
   if (fs.existsSync(target)) {
-    const stat = fs.lstatSync(target);
-    if (stat.isSymbolicLink()) fs.unlinkSync(target);
-    else if (stat.isDirectory()) fs.rmSync(target, { recursive: true });
-    else fs.unlinkSync(target);
+    fs.rmSync(target, { recursive: true, force: true });
   }
-  fs.symlinkSync(sourceDir, target, "junction");
-  console.log(`Symlinked: ${target} -> ${sourceDir}`);
+  function copyDir(src, dst) {
+    ensureDir(dst);
+    for (const entry of fs.readdirSync(src)) {
+      const srcPath = path.join(src, entry);
+      const dstPath = path.join(dst, entry);
+      if (fs.statSync(srcPath).isDirectory()) {
+        copyDir(srcPath, dstPath);
+      } else {
+        fs.copyFileSync(srcPath, dstPath);
+      }
+    }
+  }
+  copyDir(sourceDir, target);
+  console.log(`Copied: ${target} <- ${sourceDir}`);
 }
 
 function removeAgents(targetDir) {
@@ -105,13 +114,10 @@ function removeAgents(targetDir) {
   }
 }
 
-function removeSkillsSymlink(target) {
+function removeSkillsDir(target) {
   if (fs.existsSync(target)) {
-    const stat = fs.lstatSync(target);
-    if (stat.isSymbolicLink()) {
-      fs.unlinkSync(target);
-      console.log(`Removed symlink: ${target}`);
-    }
+    fs.rmSync(target, { recursive: true, force: true });
+    console.log(`Removed: ${target}`);
   }
 }
 
@@ -196,7 +202,7 @@ async function runInstall(options) {
   console.log(`Skills: ${skillsTarget}`);
 
   copyAgents(agentsTarget);
-  symlinkSkills(skillsTarget, skillsSource);
+  copySkills(skillsTarget, skillsSource);
 
   const addAgents = options.yes || (await prompt("Add superpawers agents to config? [Y/n]")) !== "n";
   if (addAgents) {
@@ -243,7 +249,7 @@ async function runUninstall(options) {
   }
 
   removeAgents(agentsTarget);
-  removeSkillsSymlink(skillsTarget);
+  removeSkillsDir(skillsTarget);
 
   const configPath = options.mode === "global" ? GLOBAL_CONFIG : LOCAL_CONFIG;
   removeAgentsFromConfig(configPath);
