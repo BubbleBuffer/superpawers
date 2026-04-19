@@ -22,22 +22,64 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
-## Pre-Plan Research
+## Planner Dispatch
 
-Before writing the plan, consider dispatching a researcher agent to gather codebase context:
+Dispatch the planner agent to investigate the codebase and produce the plan:
 
-- **When:** Complex codebases where you don't know the file structure, patterns, or conventions
-- **How:** Dispatch `task` with `subagent_type: "explore"` (uses the researcher agent prompt)
-- **What to ask:** File locations, existing patterns, dependencies, related implementations
-
-Example dispatch:
 ```
-Task("Explore auth module structure", subagent_type="explore", prompt="Find all files related to authentication in this codebase. Map out the auth flow: routes → middleware → handlers → data layer. Report file paths and key function names.")
+Task(
+  "Create implementation plan for [feature name]",
+  subagent_type="superpawers-planner",
+  prompt=<rendered planner.template.md with spec path, scope, constraints>
+)
 ```
 
-The researcher reports back with file paths and findings — you use this to write accurate file paths and patterns into your plan.
+The planner will:
+1. Dispatch researcher subagents to explore the codebase
+2. Write the plan file following the format below
+3. Dispatch a reviewer subagent to check plan quality
+4. Report back with status, plan path, and review result
 
-**When NOT to dispatch:** Small/well-known codebases where you already know the structure.
+### Prompt Templates
+
+Templates live in this skill's directory:
+- `planner.template.md` — context for planner dispatch
+- `planner-reviewer.template.md` — context for the reviewer the planner dispatches
+
+### Handling Planner Status
+
+**DONE (review PASS):**
+Present plan summary to user and offer execution choice. Do not read
+the full plan — show the path, goal, task count, and key decisions.
+
+**DONE (review FAIL, simple issues):**
+Simple issues are: typos, naming inconsistencies, dead references,
+missing specificity. Fix these directly in the plan file, then present
+summary and offer execution choice.
+
+**DONE (review FAIL, architectural/spec issues):**
+Architectural issues indicate overscoping or unclear specs — things
+that require design judgment. Present the findings to the user:
+
+> "The plan reviewer found some issues that need your input:
+> [List issues from the review section in the plan]
+>
+> These seem to stem from [ambiguous spec / scope overlap / unclear requirements].
+> What are your thoughts?"
+
+Discuss with the user, then either:
+- Fix the plan directly based on their answers, or
+- Re-dispatch the planner with clarified scope/constraints
+
+**NEEDS_CONTEXT:**
+The planner has specific questions. Ask the user, then re-dispatch
+the planner with the answers.
+
+**BLOCKED:**
+The planner couldn't proceed. Present blocker to user with options:
+1. **Re-scope:** Narrow the spec and re-dispatch
+2. **Provide context:** Answer the blocker and re-dispatch
+3. **Abandon:** Drop this approach
 
 ## File Structure
 
@@ -136,21 +178,9 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Exact commands with expected output
 - DRY, YAGNI, TDD, frequent commits
 
-## Self-Review
-
-After writing the complete plan, look at the spec with fresh eyes and check the plan against it. This is a checklist you run yourself — not a subagent dispatch.
-
-**1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a task that implements it? List any gaps.
-
-**2. Placeholder scan:** Search your plan for red flags — any of the patterns from the "No Placeholders" section above. Fix them.
-
-**3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
-
-If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
-
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
+After the plan is approved (review PASS or issues resolved), offer execution choice:
 
 **"Plan complete and saved to `.superpawers/plans/<filename>.md`. Two execution options:**
 
