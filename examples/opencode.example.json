@@ -1,0 +1,147 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "provider": {
+        "minimax-anthropic": {
+            "npm": "@ai-sdk/anthropic",
+            "name": "MiniMax",
+            "options": {
+                "baseURL": "https://api.minimax.io/anthropic/v1",
+                "apiKey": "YOUR_MINIMAX_API_KEY",
+                "timeout": 3000000
+            },
+            "models": {
+                "MiniMax-M2.7": {
+                    "name": "MiniMax M2.7 (Subagent)"
+                }
+            }
+        }
+    },
+    "model": "minimax-anthropic/MiniMax-M2.7",
+    "server": {
+        "port": 4096,
+        "hostname": "0.0.0.0",
+        "mdns": true,
+        "mdnsDomain": "opencode.local",
+        "cors": [
+            "http://localhost:5173",
+            "http://opencode.local:4096"
+        ]
+    },
+    "agent": {
+        "plan": {
+            "mode": "primary",
+            "model": "zai-coding-plan/glm-5.1",
+            "description": "Primary architect and planner. Orchestrates subagents to research and break down tasks.",
+            "permission": {
+                "edit": "ask",
+                "bash": "ask",
+                "task": {
+                    "*": "allow"
+                }
+            }
+        },
+        "build": {
+            "mode": "primary",
+            "model": "zai-coding-plan/glm-5.1",
+            "description": "Main primary builder. Reads codebase, writes files, implements plans, and delegates to subagents.",
+            "permission": {
+                "edit": "allow",
+                "bash": "allow",
+                "task": {
+                    "*": "allow"
+                }
+            }
+        },
+        "sub-plan": {
+            "mode": "subagent",
+            "model": "zai-coding-plan/glm-5.1",
+            "description": "Specialized planner for breaking down complex problems. Does not write code.",
+            "permission": {
+                "edit": "deny",
+                "bash": "ask"
+            }
+        },
+        "sub-research": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Explores the codebase, searches for keywords, and gathers context.",
+            "permission": {
+                "edit": "deny",
+                "bash": {
+                    "*": "ask",
+                    "grep *": "allow",
+                    "find *": "allow",
+                    "cat *": "allow"
+                }
+            }
+        },
+        "sub-build": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Executes specific coding tasks and modifies files as directed.",
+            "permission": {
+                "edit": "allow",
+                "bash": "allow"
+            }
+        },
+        "sub-review": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Reviews code, runs QA, and identifies performance or security issues.",
+            "permission": {
+                "edit": "deny",
+                "bash": {
+                    "*": "ask",
+                    "git diff": "allow",
+                    "git log*": "allow"
+                }
+            }
+        },
+        "superpawers-researcher": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Explores codebase, gathers context, reports findings"
+        },
+        "superpawers-implementer": {
+            "mode": "subagent",
+            "model": "zai-coding-plan/glm-5.1",
+            "description": "Implements tasks following TDD with isolated context"
+        },
+        "superpawers-reviewer": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Reviews code quality, spec compliance, and production readiness"
+        },
+        "superpawers-verifier": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7",
+            "description": "Runs tests, lint, and typecheck independently"
+        }
+    },
+    "mcp": {
+        "fetch": {
+            "enabled": true,
+            "type": "local",
+            "command": [
+                "uvx",
+                "mcp-server-fetch"
+            ]
+        },
+        "minimax-mcp": {
+            "type": "local",
+            "command": [
+                "uvx",
+                "minimax-coding-plan-mcp",
+                "-y"
+            ],
+            "environment": {
+                "MINIMAX_API_KEY": "YOUR_MINIMAX_API_KEY",
+                "MINIMAX_API_HOST": "https://api.minimax.io"
+            }
+        }
+    },
+    "plugin": [
+        "cc-safety-net",
+        "superpawers"
+    ]
+}
