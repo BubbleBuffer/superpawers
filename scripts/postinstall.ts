@@ -16,41 +16,41 @@ function ensureDir(dir: string): void {
   }
 }
 
-function removeExisting(target: string): void {
-  if (fs.existsSync(target)) {
-    const stat = fs.lstatSync(target);
-    if (stat.isSymbolicLink()) {
-      fs.unlinkSync(target);
-      console.log(`Removed old symlink: ${target}`);
-    } else if (stat.isDirectory()) {
-      fs.rmSync(target, { recursive: true });
-      console.log(`Removed old directory: ${target}`);
+function copyFileOrDir(source: string, target: string): void {
+    const stat = fs.statSync(source);
+    if (stat.isDirectory()) {
+        fs.cpSync(source, target, { recursive: true });
     } else {
-      fs.unlinkSync(target);
-      console.log(`Removed old file: ${target}`);
+        fs.copyFileSync(source, target);
     }
-  }
+    console.log(`Copied: ${target} <- ${source}`);
+}
+
+function removeExisting(target: string): void {
+    if (fs.existsSync(target)) {
+        fs.rmSync(target, { recursive: true, force: true });
+        console.log(`Removed: ${target}`);
+    }
 }
 
 function linkAgents(): void {
-  ensureDir(AGENTS_TARGET_DIR);
+    ensureDir(AGENTS_TARGET_DIR);
 
-  const agentFiles = fs.readdirSync(AGENTS_SOURCE).filter((f) => f.endsWith(".md"));
+    const agentFiles = fs.readdirSync(AGENTS_SOURCE).filter((f) => f.endsWith(".md"));
 
-  for (const file of agentFiles) {
-    const source = path.join(AGENTS_SOURCE, file);
-    const target = path.join(AGENTS_TARGET_DIR, file);
-    removeExisting(target);
-    fs.symlinkSync(source, target, "junction");
-    console.log(`Symlinked: ${target} -> ${source}`);
-  }
+    for (const file of agentFiles) {
+        const source = path.join(AGENTS_SOURCE, file);
+        const target = path.join(AGENTS_TARGET_DIR, file);
+        removeExisting(target);
+        copyFileOrDir(source, target);
+    }
 }
 
 function linkSkills(): void {
-  ensureDir(path.dirname(SKILLS_TARGET));
-  removeExisting(SKILLS_TARGET);
-  fs.symlinkSync(SKILLS_SOURCE, SKILLS_TARGET, "junction");
-  console.log(`Symlinked: ${SKILLS_TARGET} -> ${SKILLS_SOURCE}`);
+    ensureDir(path.dirname(SKILLS_TARGET));
+    removeExisting(SKILLS_TARGET);
+    fs.cpSync(SKILLS_SOURCE, SKILLS_TARGET, { recursive: true });
+    console.log(`Copied: ${SKILLS_TARGET} <- ${SKILLS_SOURCE}`);
 }
 
 linkAgents();
