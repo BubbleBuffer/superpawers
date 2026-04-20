@@ -8,6 +8,8 @@ Opinionated AI coding workflow skills and subagents for OpenCode. SuperPawers in
 npx @bubblebuffer/superpawers
 ```
 
+If you are working from a local checkout of this repository, run `node ./superpawers` instead so npm does not resolve the workspace package name before installing the published bin.
+
 This will:
 1. Detect a global OpenCode workspace in `~/.config/opencode/` or a project workspace in the current repository
 2. Install markdown agents into `~/.config/opencode/agents/` or `./.opencode/agents/`
