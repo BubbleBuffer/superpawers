@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Use when you have a spec or requirements for a multi-step task, before touching code
+description: Use when an approved design or clear requirements must be turned into a multi-step implementation plan on a feature branch
 ---
 
 # Writing Plans
@@ -13,14 +13,14 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be written while on a feature branch (created by brainstorming skill).
+**Context:** This runs on an isolated feature branch created by `using-git-branches`. If you are not on one, stop and invoke `using-git-branches` first.
 
 **Save plans to:** `.superpawers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
 ## Scope Check
 
-If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem or recommend the User spend some more time brainstorming. Each plan should produce working, testable software on its own.
 
 ## Planner Dispatch
 
@@ -180,14 +180,10 @@ Every step must contain the actual content an engineer needs. These are **plan f
 
 ## Execution Handoff
 
-After the plan is approved (review PASS or issues resolved), offer execution choice:
+After the plan is approved (review PASS or issues resolved), hand off to execution.
 
-**"Plan complete and saved to `.superpawers/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `.superpawers/plans/<filename>.md`. Next step: `subagent-driven-development`."**
 
-**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
-
-**Which approach?**
-
-**If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpawers:subagent-driven-development
-- Fresh subagent per task + two-stage review
+- **REQUIRED SUB-SKILL:** Use `subagent-driven-development` to execute the plan.
+- Fresh subagent per task, two-stage review (spec compliance then code quality), final reviewer, then verifier.
+- If the user explicitly requests hands-on execution instead, pause and confirm — this library does not provide a manual execution skill, and inline execution bypasses the review gates.

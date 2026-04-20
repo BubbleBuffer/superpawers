@@ -1,3 +1,7 @@
+<!-- Used by the planner subagent to dispatch a reviewer for plan quality checks.
+     This is a programmatic checklist review (dead references, placeholders, spec coverage).
+     For human-facing document review with calibration guidance, see plan-document-reviewer-prompt.md. -->
+
 ## Context
 
 You are reviewing an implementation plan for quality and consistency.

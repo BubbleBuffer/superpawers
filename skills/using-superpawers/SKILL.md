@@ -1,6 +1,6 @@
 ---
 name: using-superpawers
-description: Use when starting any conversation - establishes how to find and use skills, requiring skill tool invocation before ANY response including clarifying questions
+description: Use when deciding which SuperPawers skill should govern a new task or workflow step, before taking any other action
 ---
 
 <SUBAGENT-STOP>
@@ -8,12 +8,33 @@ If you were dispatched as a subagent to execute a specific task, skip this skill
 </SUBAGENT-STOP>
 
 <EXTREMELY-IMPORTANT>
-If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST invoke the skill.
+If a skill plausibly matches the task category or was explicitly requested, load it before acting.
 
-IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
-
-This is not negotiable. This is not optional. You cannot rationalize your way out of this.
+Skills codify the workflow this project trusts. Do not shortcut around them, and do not rationalize your way past the entry router.
 </EXTREMELY-IMPORTANT>
+
+## Common Entry Points
+
+Pick one, then invoke that skill first.
+
+| Situation | Start with |
+|-----------|------------|
+| New feature, behavior change, or vague request | `brainstorming` |
+| Approved spec, need a plan | `writing-plans` |
+| Approved plan, ready to execute | `subagent-driven-development` |
+| Bug, test failure, or unexpected behavior | `systematic-debugging` |
+| Incoming human or external review feedback | `receiving-code-review` |
+| Need a review before merge or at a milestone | `requesting-code-review` |
+| Multiple independent investigations in parallel | `dispatching-parallel-agents` |
+| About to claim work is done, passing, or fixed | `verification-before-completion` |
+| All tasks complete, ready to merge/PR/discard | `finishing-a-development-branch` |
+| Creating or editing a skill | `writing-skills` |
+
+If more than one applies, use this order:
+
+1. Process skills first (`brainstorming`, `systematic-debugging`) — they decide HOW to approach the task.
+2. Workflow skills next (`writing-plans`, `subagent-driven-development`) — they decide what to do and in what order.
+3. Quality gates (`verification-before-completion`, review skills) — they govern transitions and claims.
 
 ## Instruction Priority
 
@@ -50,17 +71,14 @@ Dispatch a subagent by mentioning it:
 
 ### The Rule
 
-**Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means that you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
+**If a skill plausibly matches the task category, invoke it before acting.** Skills contain the project's workflow decisions; acting without them invites drift. If an invoked skill turns out to be the wrong one, abandon it and pick the right one — that is cheap. Skipping the router is not.
 
 ### Skill Flow
 
 ```dot
 digraph skill_flow {
     "User message received" [shape=doublecircle];
-    "About to plan mode?" [shape=doublecircle];
-    "Already brainstormed?" [shape=diamond];
-    "Invoke brainstorming skill" [shape=box];
-    "Might any skill apply?" [shape=diamond];
+    "Plausible skill match?" [shape=diamond];
     "Invoke skill tool" [shape=box];
     "Announce: 'Using [skill] to [purpose]'" [shape=box];
     "Has checklist?" [shape=diamond];
@@ -68,14 +86,9 @@ digraph skill_flow {
     "Follow skill exactly" [shape=box];
     "Respond (including clarifications)" [shape=doublecircle];
 
-    "About to plan mode?" -> "Already brainstormed?";
-    "Already brainstormed?" -> "Invoke brainstorming skill" [label="no"];
-    "Already brainstormed?" -> "Might any skill apply?" [label="yes"];
-    "Invoke brainstorming skill" -> "Might any skill apply?";
-
-    "User message received" -> "Might any skill apply?";
-    "Might any skill apply?" -> "Invoke skill tool" [label="yes, even 1%"];
-    "Might any skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
+    "User message received" -> "Plausible skill match?";
+    "Plausible skill match?" -> "Invoke skill tool" [label="yes"];
+    "Plausible skill match?" -> "Respond (including clarifications)" [label="clearly not"];
     "Invoke skill tool" -> "Announce: 'Using [skill] to [purpose]'";
     "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
     "Has checklist?" -> "Create todo per item" [label="yes"];
@@ -107,11 +120,14 @@ These thoughts mean STOP—you're rationalizing:
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (brainstorming, debugging) - these determine HOW to approach the task
-2. **Implementation skills second** (frontend-design, mcp-builder) - these guide execution
+1. **Process skills first** (`brainstorming`, `systematic-debugging`) — these decide HOW to approach the task.
+2. **Workflow skills second** (`writing-plans`, `subagent-driven-development`) — these decide what to do and in what order.
+3. **Quality gates last** (`verification-before-completion`, `requesting-code-review`, `receiving-code-review`) — these govern transitions and completion claims.
 
-"Let's build X" → brainstorming first, then implementation skills.
-"Fix this bug" → debugging first, then domain-specific skills.
+"Let's build X" → `brainstorming` first.
+"Fix this bug" → `systematic-debugging` first.
+"Review what I just wrote" → `requesting-code-review`.
+"Here's the reviewer's feedback" → `receiving-code-review`.
 
 ## Skill Types
 

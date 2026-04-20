@@ -1,6 +1,6 @@
 {
   "name": "@bubblebuffer/superpawers",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Quick setup for SuperPawers skills and agents - subagent-driven development workflow",
   "bin": {
     "superpawers": "./superpawers"
@@ -10,6 +10,9 @@
     "skills/",
     "superpawers"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {},
   "keywords": [
     "opencode",

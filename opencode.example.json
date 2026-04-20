@@ -16,6 +16,10 @@
         "superpawers:verifier": {
             "mode": "subagent",
             "model": "minimax-anthropic/MiniMax-M2.7"
+        },
+        "superpawers:planner": {
+            "mode": "subagent",
+            "model": "minimax-anthropic/MiniMax-M2.7"
         }
     },
     "plugin": [

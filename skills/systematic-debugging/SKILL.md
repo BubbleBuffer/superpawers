@@ -286,6 +286,7 @@ These techniques are part of systematic debugging and available in this director
 **Related skills:**
 - **superpawers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
 - **superpawers:verification-before-completion** - Verify fix worked before claiming success
+- **superpawers:dispatching-parallel-agents** - For parallel evidence gathering in Phase 1 (multiple independent components to investigate)
 
 ## Real-World Impact
 

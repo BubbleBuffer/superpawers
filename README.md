@@ -11,7 +11,7 @@ npx @bubblebuffer/superpawers
 This will:
 1. Detect global (`~/.config/opencode/`) and local (`./.opencode/config.json`) workspaces
 2. Copy agents to `~/.config/opencode/agents/superpawers/`
-3. Create skills symlink at `~/.config/opencode/skills/superpawers`
+3. Copy skills to `~/.config/opencode/skills/superpawers/`
 4. Prompt to add agent definitions to your opencode.json
 
 ### Options
@@ -59,39 +59,36 @@ SuperPawers uses `-` separator (not `:`) for agent names:
 
 | Agent | Purpose |
 |-------|---------|
-| `superpawers-research` | Codebase exploration and context gathering |
-| `superpawers-build` | Task implementation with TDD |
-| `superpawers-review` | Spec compliance and code quality review |
-| `superpawers-plan` | Breaks down complex problems into tasks |
+| `superpawers-researcher` | Codebase exploration and context gathering |
+| `superpawers-implementer` | Task implementation with TDD |
+| `superpawers-reviewer` | Spec compliance and code quality review |
+| `superpawers-verifier` | Independent test/lint/typecheck verification |
+| `superpawers-planner` | Breaks down complex problems into tasks |
 
 ## The Workflow
 
-1. **brainstorming** - Activates before writing code. Refines ideas through questions, explores alternatives.
+The canonical order for any new feature or change:
 
-2. **using-git-branches** - Activates after design approval. Creates isolated branch.
+| # | Skill | Trigger | Input | Output | Next skill |
+|---|-------|---------|-------|--------|------------|
+| 1 | `brainstorming` | New feature, behavior change, or unclear request | User intent | Approved design (discussed, not yet committed) | `using-git-branches` |
+| 2 | `using-git-branches` | Design approved, about to produce tracked artifacts | Approved design | Isolated feature branch, clean baseline | `writing-plans` |
+| 3 | `writing-plans` | On a feature branch with an approved design | Design doc | Bite-sized implementation plan | `subagent-driven-development` |
+| 4 | `subagent-driven-development` | Plan approved, ready to execute | Plan file | Implemented, reviewed, verified work | `finishing-a-development-branch` |
+| 5 | `finishing-a-development-branch` | All tasks complete and verified | Feature branch with passing work | Merge, PR, kept branch, or discarded branch | — |
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks.
+Supporting skills activate inside this flow:
 
-4. **subagent-driven-development** - Activates with plan. Dispatches subagent per task.
-
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR.
-
-6. **verification-before-completion** - Evidence before completion claims.
-
-7. **finishing-a-development-branch** - Presents merge/PR/keep/discard options.
-
-## Skills Library
-
-| Skill | Purpose |
-|-------|---------|
-| `brainstorming` | Explore requirements before building |
-| `writing-plans` | Create implementation plans |
-| `subagent-driven-development` | Execute plans via subagents |
-| `verification-before-completion` | Evidence before completion claims |
-| `systematic-debugging` | Bug investigation |
-| `test-driven-development` | TDD discipline |
-| `using-git-branches` | Branch-based isolation |
-| `dispatching-parallel-agents` | Concurrent subagent workflows |
+| Skill | Role |
+|-------|------|
+| `test-driven-development` | Discipline enforced by implementer subagents during step 4 |
+| `verification-before-completion` | Gate applied before any completion claim, commit, or handoff |
+| `systematic-debugging` | Entry point when a bug, failure, or regression interrupts the flow |
+| `requesting-code-review` | Ad-hoc or milestone review outside the automated two-stage review |
+| `receiving-code-review` | Handling incoming human or external review feedback |
+| `dispatching-parallel-agents` | Parallel research or investigation across independent domains |
+| `using-superpawers` | Router for picking the right entry skill for a new request |
+| `writing-skills` | Authoring standard for adding or editing skills |
 
 ## License
 

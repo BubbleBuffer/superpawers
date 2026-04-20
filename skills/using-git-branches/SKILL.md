@@ -93,6 +93,15 @@ Ready to implement <feature-name>
 | Tests fail during baseline | Report failures + ask |
 | No package.json/Cargo.toml | Skip dependency install |
 
+## When NOT to Use
+
+- Already working on an isolated feature branch from a prior session
+- Docs-only or scratch work the user has explicitly asked to perform on the current branch
+- Inside a subagent that inherits the controller's branch context
+- When the user has pinned the working branch for the session
+
+In those cases, verify the baseline instead of creating a new branch.
+
 ## Common Mistakes
 
 ### Working on main/master
@@ -134,10 +143,13 @@ Ready to implement auth feature
 
 ## Integration
 
-**Called by:**
-- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
-- **subagent-driven-development** - REQUIRED before executing any tasks
-- Any skill needing isolated workspace
+**Use after:**
+- **brainstorming** — once the design is approved and you are about to commit the spec or any planning artifact
+
+**Prerequisite for:**
+- **writing-plans** — plans must be authored on the feature branch
+- **subagent-driven-development** — tasks execute on the feature branch created here
+- Any skill that produces committed artifacts
 
 **Pairs with:**
-- **finishing-a-development-branch** - REQUIRED for cleanup after work complete
+- **finishing-a-development-branch** — handles the branch once work is complete

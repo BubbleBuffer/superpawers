@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+description: Use when defining or changing behavior and the work has not yet been designed, approved, and scoped
 ---
 
 # Brainstorming Ideas Into Designs
@@ -26,10 +26,11 @@ You MUST create a task for each of these items and complete them in order:
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to `.superpawers/specs/YYYY-MM-DD-<topic>-design.md` and commit
-7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
+6. **Set up isolated branch** — invoke `using-git-branches` before producing any committed artifact (spec, plan, or code)
+7. **Write design doc** — save to `.superpawers/specs/YYYY-MM-DD-<topic>-design.md` and commit on the feature branch
+8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
+9. **User reviews written spec** — ask user to review the spec file before proceeding
+10. **Transition to planning** — invoke `writing-plans` to create the implementation plan
 
 ## Process Flow
 
@@ -42,7 +43,8 @@ digraph brainstorming {
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
-    "Write design doc" [shape=box];
+    "Invoke using-git-branches" [shape=box];
+    "Write design doc on feature branch" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "User reviews spec?" [shape=diamond];
     "Invoke writing-plans skill" [shape=doublecircle];
@@ -55,22 +57,23 @@ digraph brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Spec self-review\n(fix inline)";
+    "User approves design?" -> "Invoke using-git-branches" [label="yes"];
+    "Invoke using-git-branches" -> "Write design doc on feature branch";
+    "Write design doc on feature branch" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "User reviews spec?";
-    "User reviews spec?" -> "Write design doc" [label="changes requested"];
+    "User reviews spec?" -> "Write design doc on feature branch" [label="changes requested"];
     "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
 }
 ```
 
-**The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is writing-plans.
+**Terminal states:** After design approval, invoke `using-git-branches` before committing any artifact. After the spec is committed and approved, invoke `writing-plans`. Do NOT invoke implementation skills directly from brainstorming.
 
 ## The Process
 
 **Understanding the idea:**
 
 - Check out the current project state first (files, docs, recent commits)
-- For complex codebases, dispatch a researcher agent (`task` with `subagent_type: "explore"`) to explore existing patterns, dependencies, and constraints before asking questions. The researcher reports back with structured findings you can use to ask more informed questions.
+- For complex codebases, dispatch a researcher agent (`task` with `subagent_type: "superpawers:researcher"`) to explore existing patterns, dependencies, and constraints before asking questions. The researcher reports back with structured findings you can use to ask more informed questions.
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
@@ -107,6 +110,11 @@ digraph brainstorming {
 
 ## After the Design
 
+**Branch setup (before any commit):**
+
+- Once the design is approved but before writing the spec file, invoke `using-git-branches` to create an isolated feature branch and verify a clean test baseline.
+- All spec, plan, and implementation commits land on that branch.
+
 **Documentation:**
 
 - Write the validated design (spec) to `.superpawers/specs/YYYY-MM-DD-<topic>-design.md`
@@ -133,8 +141,8 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 **Implementation:**
 
-- Invoke the writing-plans skill to create a detailed implementation plan
-- Do NOT invoke any other skill. writing-plans is the next step.
+- Invoke `writing-plans` to create a detailed implementation plan.
+- Do NOT invoke any implementation skill directly. The only skill that follows a committed, approved spec is `writing-plans`.
 
 ## Key Principles
 

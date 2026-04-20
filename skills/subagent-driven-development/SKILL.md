@@ -61,12 +61,8 @@ digraph process {
     "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [shape=box style=filled fillcolor=lightyellow];
     "Exit" [shape=doublecircle];
 
-    "Read plan, extract all tasks with full text, note context, create todowrite" -> "Dispatch implementer subagent (agents/implementer.md)";
-    "Dispatch implementer subagent (agents/implementer.md)" -> "Implementer subagent status?";
-    "Implementer subagent status?" -> "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [label="BLOCKED"];
-    "Implementer subagent status?" -> "Implementer subagent asks questions?" [label="DONE"];
-    "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (agents/implementer.md)";
+    "Read plan, extract all tasks with full text, note context, create todowrite" -> "Dispatch implementer subagent";
+    "Dispatch implementer subagent" -> "Implementer subagent status?";
     "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
     "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch reviewer subagent (spec compliance)";
     "Dispatch reviewer subagent (spec compliance)" -> "Reviewer confirms code matches spec?";
@@ -78,10 +74,10 @@ digraph process {
     "Implementer subagent fixes quality issues" -> "Dispatch reviewer subagent (code quality)" [label="re-review"];
     "Reviewer approves code quality?" -> "Mark task complete in todowrite" [label="yes"];
     "Mark task complete in todowrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (agents/implementer.md)" [label="yes"];
+    "More tasks remain?" -> "Dispatch implementer subagent" [label="yes"];
     "More tasks remain?" -> "Dispatch final reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final reviewer subagent for entire implementation" -> "Dispatch verifier subagent (agents/verifier.md)";
-    "Dispatch verifier subagent (agents/verifier.md)" -> "Verifier reports PASS?";
+    "Dispatch final reviewer subagent for entire implementation" -> "Dispatch verifier subagent";
+    "Dispatch verifier subagent" -> "Verifier reports PASS?";
     "Verifier reports PASS?" -> "Use superpawers:finishing-a-development-branch" [label="yes"];
     "Verifier reports PASS?" -> "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [label="fail"];
     "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" -> "Exit" [label="after recovery"];
@@ -130,11 +126,21 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Prompt Templates
 
-Agent base prompts live in `agents/`. Skills provide task-specific context when dispatching:
+Agent base prompts live in `agents/`. Skills provide task-specific context when dispatching via `@superpawers:implementer`, `@superpawers:reviewer`, `@superpawers:verifier`:
 
 - `implementer.template.md` - Implementer template (in same directory)
-- `reviewer.template.md` - Reviewer template (skills specify review focus: spec compliance, code quality, etc.)
-- `verifier.template.md` - Verifier template
+- `reviewer.template.md` - Reviewer template (skills specify review focus: spec compliance, code quality, full review)
+- `verifier.template.md` - Verifier template (language-agnostic, probes for test infrastructure)
+
+**Dispatch format:**
+```
+@superpawers:implementer: "Implement Task N: [task name]"
+
+[Paste full task text from plan]
+[Paste relevant context]
+
+[Then inject implementer.template.md content]
+```
 
 ## Example Workflow
 
@@ -276,7 +282,7 @@ Done!
 **Required workflow skills:**
 - **superpawers:using-git-branches** - REQUIRED: Set up isolated branch before starting
 - **superpawers:writing-plans** - Creates the plan this skill executes
-- **superpawers:requesting-code-review** - Code review template for reviewer subagents
+- **superpawers:requesting-code-review** - Ad-hoc code review using the consolidated reviewer template
 - **superpawers:finishing-a-development-branch** - Complete development after all tasks
 
 **Subagents should use:**

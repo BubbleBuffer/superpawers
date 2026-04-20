@@ -31,14 +31,10 @@ HEAD_SHA=$(git rev-parse HEAD)
 
 **2. Dispatch code-reviewer subagent:**
 
-Use `@superpawers:reviewer` with template at `reviewer.template.md`
+Use `@superpawers:reviewer` with template at `../subagent-driven-development/reviewer.template.md`
 
-**Placeholders:**
-- `{WHAT_WAS_IMPLEMENTED}` - What you just built
-- `{PLAN_OR_REQUIREMENTS}` - What it should do
-- `{BASE_SHA}` - Starting commit
-- `{HEAD_SHA}` - Ending commit
-- `{DESCRIPTION}` - Brief summary
+Pass `{{full_review}}` as the focus area for a complete review covering
+spec compliance, code quality, and production readiness.
 
 **3. Act on feedback:**
 - Fix Critical issues immediately
@@ -76,18 +72,16 @@ You: [Fix progress indicators]
 
 ## Integration with Workflows
 
-**Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+**Inside subagent-driven-development:**
+- Spec compliance and code quality reviews are already dispatched automatically between tasks. Use this skill only when you need an additional review (for example, a full-implementation review at a milestone).
 
-**Subagent-Driven Development:**
-- Review after each batch of tasks
-- Get feedback, apply, continue
+**Ad-hoc or milestone review:**
+- Before merge or PR creation
+- After completing a major feature outside the subagent flow
+- When stuck and a fresh perspective would help
 
-**Ad-Hoc Development:**
-- Review before merge
-- Review when stuck
+**After the review returns:**
+- Use `receiving-code-review` to evaluate and apply the feedback. That skill governs how to verify, push back, and implement review items.
 
 ## Red Flags
 
@@ -103,3 +97,4 @@ You: [Fix progress indicators]
 - Request clarification
 
 See agent system prompt at: `agents/superpawers-reviewer.system.md`
+See consolidated reviewer template at: `../subagent-driven-development/reviewer.template.md`

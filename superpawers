@@ -13,6 +13,7 @@ const GLOBAL_SKILLS = path.join(HOME, ".config", "opencode", "skills", "superpaw
 const LOCAL_SKILLS = path.join(process.cwd(), ".opencode", "skills", "superpawers");
 
 const AGENTS_SOURCE = path.join(__dirname, "agents");
+const SKILLS_SOURCE = path.join(__dirname, "skills");
 
 const AGENT_DEFINITIONS = {
   "superpawers:researcher": {
@@ -38,6 +39,12 @@ const AGENT_DEFINITIONS = {
     description: "Runs tests, lint, and typecheck independently",
     prompt: "{file:./agents/superpawers/superpawers-verifier.system.md}",
     permission: { edit: "deny", bash: "allow" }
+  },
+  "superpawers:planner": {
+    mode: "subagent",
+    description: "Investigates codebase via researcher subagents and produces implementation plans",
+    prompt: "{file:./agents/superpawers/superpawers-planner.system.md}",
+    permission: { edit: "allow", bash: "deny" }
   }
 };
 
@@ -162,23 +169,23 @@ function removeAgentsFromConfig(configPath) {
 async function runInstall(options) {
   const available = detectWorkspaces();
 
-  let targetConfig, agentsTarget, skillsTarget, skillsSource;
+  let targetConfig, agentsTarget, skillsTarget, targetLabel;
 
   if (options.mode === "global") {
     targetConfig = GLOBAL_CONFIG;
     agentsTarget = GLOBAL_AGENTS;
     skillsTarget = GLOBAL_SKILLS;
-    skillsSource = __dirname + "/skills";
+    targetLabel = "global";
   } else if (options.mode === "local") {
     targetConfig = LOCAL_CONFIG;
     agentsTarget = LOCAL_AGENTS;
     skillsTarget = LOCAL_SKILLS;
-    skillsSource = path.join(process.cwd(), "skills");
+    targetLabel = "local";
   } else if (options.path) {
     targetConfig = path.join(options.path, ".opencode", "config.json");
     agentsTarget = path.join(options.path, ".opencode", "agents", "superpawers");
     skillsTarget = path.join(options.path, ".opencode", "skills", "superpawers");
-    skillsSource = path.join(options.path, "skills");
+    targetLabel = `custom path (${options.path})`;
   } else {
     console.log(`Detected workspaces: ${available.join(", ")}`);
 
@@ -197,12 +204,12 @@ async function runInstall(options) {
     return runInstall(options);
   }
 
-  console.log(`Installing to: ${options.mode}`);
+  console.log(`Installing to: ${targetLabel}`);
   console.log(`Agents: ${agentsTarget}`);
   console.log(`Skills: ${skillsTarget}`);
 
   copyAgents(agentsTarget);
-  copySkills(skillsTarget, skillsSource);
+  copySkills(skillsTarget, SKILLS_SOURCE);
 
   const addAgents = options.yes || (await prompt("Add superpawers agents to config? [Y/n]")) !== "n";
   if (addAgents) {
@@ -219,17 +226,23 @@ async function runInstall(options) {
 async function runUninstall(options) {
   const available = detectWorkspaces();
 
-  let agentsTarget, skillsTarget;
+  let agentsTarget, skillsTarget, targetConfig, targetLabel;
 
   if (options.mode === "global") {
     agentsTarget = GLOBAL_AGENTS;
     skillsTarget = GLOBAL_SKILLS;
+    targetConfig = GLOBAL_CONFIG;
+    targetLabel = "global";
   } else if (options.mode === "local") {
     agentsTarget = LOCAL_AGENTS;
     skillsTarget = LOCAL_SKILLS;
+    targetConfig = LOCAL_CONFIG;
+    targetLabel = "local";
   } else if (options.path) {
     agentsTarget = path.join(options.path, ".opencode", "agents", "superpawers");
     skillsTarget = path.join(options.path, ".opencode", "skills", "superpawers");
+    targetConfig = path.join(options.path, ".opencode", "config.json");
+    targetLabel = `custom path (${options.path})`;
   } else {
     console.log(`Detected workspaces: ${available.join(", ")}`);
 
@@ -248,11 +261,12 @@ async function runUninstall(options) {
     return;
   }
 
+  console.log(`Uninstalling from: ${targetLabel}`);
+
   removeAgents(agentsTarget);
   removeSkillsDir(skillsTarget);
 
-  const configPath = options.mode === "global" ? GLOBAL_CONFIG : LOCAL_CONFIG;
-  removeAgentsFromConfig(configPath);
+  removeAgentsFromConfig(targetConfig);
 
   console.log("Uninstall complete!");
 }

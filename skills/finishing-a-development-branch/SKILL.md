@@ -26,20 +26,20 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Present Options
 
-Present exactly these 4 options:
+Present exactly these 4 options, each with one line of guidance:
 
 ```
-Implementation complete. What would you like to do?
+Implementation complete and verified. What would you like to do?
 
-1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
-4. Discard this work
+1. Merge back to <base-branch> locally — solo or local workflows; requires fresh verification on the base branch after merge
+2. Push and create a Pull Request — default for shared repos or when review/CI is required
+3. Keep the branch as-is — pause work; resume later without merging or discarding
+4. Discard this work — only if the user has explicitly abandoned the branch
 
 Which option?
 ```
 
-**Don't add explanation** - keep options concise.
+One line per option is allowed. Do not add longer explanations or recommendations — the user decides.
 
 ### Execute Choice
 
@@ -130,5 +130,9 @@ git branch -D <feature-branch>
 
 ## Integration
 
+**Use after:**
+- `subagent-driven-development` — all tasks complete, final reviewer and verifier have passed.
+- `verification-before-completion` — completion claims must be backed by fresh verification evidence before this skill runs.
+
 **Pairs with:**
-- **using-git-branches** - Creates the branch this skill finishes
+- `using-git-branches` — created the branch this skill finishes.

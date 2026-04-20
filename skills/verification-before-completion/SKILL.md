@@ -118,11 +118,10 @@ From 24 failure memories:
 
 **ALWAYS before:**
 - ANY variation of success/completion claims
-- ANY expression of satisfaction
-- ANY positive statement about work state
-- Committing, PR creation, task completion
-- Moving to next task
-- Delegating to agents
+- ANY expression of satisfaction about work state
+- Committing, PR creation, or marking a task done
+- Moving on from a task you just claimed is finished
+- Accepting a subagent's success report as the truth
 
 **Rule applies to:**
 - Exact phrases

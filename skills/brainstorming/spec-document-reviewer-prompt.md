@@ -7,7 +7,7 @@ Use this template when dispatching a spec document reviewer subagent.
 **Dispatch after:** Spec document is written to .superpawers/specs/
 
 ```
-@superpawers:spec-reviewer: "Review spec document"
+@superpawers:reviewer: "Review spec document"
 
 You are a spec document reviewer. Verify this spec is complete and ready for planning.
 

@@ -11,6 +11,8 @@ Code review requires technical evaluation, not emotional performance.
 
 **Core principle:** Verify before implementing. Ask before assuming. Technical correctness over social comfort.
 
+**Scope:** This skill covers handling incoming review feedback — from a human partner, a reviewer subagent, or an external reviewer on a PR. To *request* a review (ad-hoc or at a milestone), use `requesting-code-review`.
+
 ## The Response Pattern
 
 ```
@@ -27,7 +29,7 @@ WHEN receiving code review feedback:
 ## Forbidden Responses
 
 **NEVER:**
-- "You're absolutely right!" (explicit CLAUDE.md violation)
+- "You're absolutely right!" (performative agreement)
 - "Great point!" / "Excellent feedback!" (performative)
 - "Let me implement that now" (before verification)
 
@@ -211,3 +213,12 @@ When replying to inline review comments on GitHub, reply in the comment thread (
 Verify. Question. Then implement.
 
 No performative agreement. Technical rigor always.
+
+## Integration
+
+**Pairs with:**
+- `requesting-code-review` — used to dispatch the review this skill responds to.
+
+**Feeds into:**
+- `verification-before-completion` — before claiming fixes are done, verify them.
+- `subagent-driven-development` — if feedback reveals plan-level issues, return to the plan rather than patching in place.

@@ -15,18 +15,14 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 ## When to Use
 
-**Always:**
-- New features
-- Bug fixes
-- Refactoring
-- Behavior changes
+**Default:** Use TDD for all behavior changes — new features, bug fixes, refactors that alter behavior, and behavior changes inside existing code.
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
+**Only skip with explicit human approval, and only for:**
+- Throwaway prototypes that will be deleted before merge
 - Generated code
-- Configuration files
+- Configuration files and static data
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+If you are tempted to skip TDD for any other reason, that is rationalization. Do not skip.
 
 ## The Iron Law
 
@@ -356,10 +352,19 @@ Never fix bugs without a test.
 
 ## Testing Anti-Patterns
 
-When adding mocks or test utilities, read @testing-anti-patterns.md to avoid common pitfalls:
+When adding mocks or test utilities, read `testing-anti-patterns.md` in this skill's directory to avoid common pitfalls:
 - Testing mock behavior instead of real behavior
 - Adding test-only methods to production classes
 - Mocking without understanding dependencies
+
+## Integration
+
+**Enforced by:**
+- `subagent-driven-development` — implementer subagents follow this cycle for every task.
+
+**Pairs with:**
+- `verification-before-completion` — verifying RED and GREEN is how evidence is produced for completion claims.
+- `systematic-debugging` — Phase 4 fixes require a failing test first.
 
 ## Final Rule
 
@@ -368,4 +373,4 @@ Production code → test exists and failed first
 Otherwise → not TDD
 ```
 
-No exceptions without your human partner's permission.
+No exceptions without your human partner's explicit permission.
