@@ -1,8 +1,13 @@
+---
+name: root-cause-tracing
+description: Use when an error appears deep in the call stack, when invalid data reaches a function and the source is unclear, or when you need to find which test or code path triggers a problem
+---
+
 # Root Cause Tracing
 
 ## Overview
 
-Bugs often manifest deep in the call stack (git init in wrong directory, file created in wrong location, database opened with wrong path). Your instinct is to fix where the error appears, but that's treating a symptom.
+Bugs often manifest deep in the call stack (file created in wrong location, database opened with wrong path, command run in wrong directory). Your instinct is to fix where the error appears, but that's treating a symptom.
 
 **Core principle:** Trace backward through the call chain until you find the original trigger, then fix at the source.
 
@@ -23,43 +28,60 @@ digraph when_to_use {
 }
 ```
 
-**Use when:**
 - Error happens deep in execution (not at entry point)
 - Stack trace shows long call chain
 - Unclear where invalid data originated
 - Need to find which test/code triggers the problem
 
+## Quick Reference
+
+| Step | Action | Key Question |
+|------|--------|-------------|
+| 1. Observe | Note the error message and location | What exactly failed? |
+| 2. Immediate Cause | Find the code that directly triggered the error | What line produced the bad value? |
+| 3. Trace Up | Follow the call chain backward one level | What called this function? |
+| 4. Keep Tracing | Continue up the chain checking each caller | Where did the invalid value come from? |
+| 5. Original Trigger | Identify the first function that introduced bad data | What test or code path started this? |
+
 ## The Tracing Process
 
 ### 1. Observe the Symptom
+
 ```
-Error: git init failed in /Users/jesse/project/packages/core
+Error: git init failed in /project/packages/core
 ```
 
 ### 2. Find Immediate Cause
-**What code directly causes this?**
+
+What code directly causes this?
+
 ```typescript
 await execFileAsync('git', ['init'], { cwd: projectDir });
 ```
 
 ### 3. Ask: What Called This?
+
 ```typescript
 WorktreeManager.createSessionWorktree(projectDir, sessionId)
-  → called by Session.initializeWorkspace()
-  → called by Session.create()
-  → called by test at Project.create()
+  -> called by Session.initializeWorkspace()
+  -> called by Session.create()
+  -> called by test at Project.create()
 ```
 
 ### 4. Keep Tracing Up
-**What value was passed?**
+
+What value was passed?
+
 - `projectDir = ''` (empty string!)
 - Empty string as `cwd` resolves to `process.cwd()`
 - That's the source code directory!
 
 ### 5. Find Original Trigger
-**Where did empty string come from?**
+
+Where did empty string come from?
+
 ```typescript
-const context = setupCoreTest(); // Returns { tempDir: '' }
+const context = setupTest(); // Returns { tempDir: '' }
 Project.create('name', context.tempDir); // Accessed before beforeEach!
 ```
 
@@ -68,25 +90,25 @@ Project.create('name', context.tempDir); // Accessed before beforeEach!
 When you can't trace manually, add instrumentation:
 
 ```typescript
-// Before the problematic operation
-async function gitInit(directory: string) {
+async function dangerousOperation(directory: string) {
   const stack = new Error().stack;
-  console.error('DEBUG git init:', {
+  console.error('DEBUG dangerous operation:', {
     directory,
     cwd: process.cwd(),
     nodeEnv: process.env.NODE_ENV,
     stack,
   });
 
-  await execFileAsync('git', ['init'], { cwd: directory });
+  await execFileAsync('some-cmd', ['init'], { cwd: directory });
 }
 ```
 
 **Critical:** Use `console.error()` in tests (not logger - may not show)
 
 **Run and capture:**
+
 ```bash
-npm test 2>&1 | grep 'DEBUG git init'
+npm test 2>&1 | grep 'DEBUG dangerous operation'
 ```
 
 **Analyze stack traces:**
@@ -105,27 +127,6 @@ Use the bisection script `find-polluter.sh` in this directory:
 ```
 
 Runs tests one-by-one, stops at first polluter. See script for usage.
-
-## Real Example: Empty projectDir
-
-**Symptom:** `.git` created in `packages/core/` (source code)
-
-**Trace chain:**
-1. `git init` runs in `process.cwd()` ← empty cwd parameter
-2. WorktreeManager called with empty projectDir
-3. Session.create() passed empty string
-4. Test accessed `context.tempDir` before beforeEach
-5. setupCoreTest() returns `{ tempDir: '' }` initially
-
-**Root cause:** Top-level variable initialization accessing empty value
-
-**Fix:** Made tempDir a getter that throws if accessed before beforeEach
-
-**Also added defense-in-depth:**
-- Layer 1: Project.create() validates directory
-- Layer 2: WorkspaceManager validates not empty
-- Layer 3: NODE_ENV guard refuses git init outside tmpdir
-- Layer 4: Stack trace logging before git init
 
 ## Key Principle
 
@@ -155,15 +156,13 @@ digraph principle {
 
 ## Stack Trace Tips
 
-**In tests:** Use `console.error()` not logger - logger may be suppressed
-**Before operation:** Log before the dangerous operation, not after it fails
-**Include context:** Directory, cwd, environment variables, timestamps
-**Capture stack:** `new Error().stack` shows complete call chain
+- In tests: Use `console.error()` not logger - logger may be suppressed
+- Before operation: Log before the dangerous operation, not after it fails
+- Include context: Directory, cwd, environment variables, timestamps
+- Capture stack: `new Error().stack` shows complete call chain
 
-## Real-World Impact
+## Related Skills
 
-From debugging session (2025-10-03):
-- Found root cause through 5-level trace
-- Fixed at source (getter validation)
-- Added 4 layers of defense
-- 1847 tests passed, zero pollution
+- **superpawers:defense-in-depth** - Add validation at multiple layers after finding root cause
+- **superpawers:systematic-debugging** - The full debugging discipline this technique supports
+- **superpawers:condition-based-waiting** - Replace arbitrary timeouts with condition polling

@@ -3,270 +3,517 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const prompts = require("prompts");
+const { applyEdits, modify, parse, printParseErrorCode } = require("jsonc-parser");
 
 const HOME = os.homedir();
-const GLOBAL_CONFIG = path.join(HOME, ".config", "opencode", "opencode.json");
-const LOCAL_CONFIG = path.join(process.cwd(), ".opencode", "config.json");
-const GLOBAL_AGENTS = path.join(HOME, ".config", "opencode", "agents", "superpawers");
-const LOCAL_AGENTS = path.join(process.cwd(), ".opencode", "agents", "superpawers");
-const GLOBAL_SKILLS = path.join(HOME, ".config", "opencode", "skills", "superpawers");
-const LOCAL_SKILLS = path.join(process.cwd(), ".opencode", "skills", "superpawers");
+const GLOBAL_ROOT = path.join(HOME, ".config", "opencode");
+const LEGACY_PLUGIN_PACKAGE = "@bubblebuffer/superpawers-opencode";
+const CONFIG_CANDIDATES = ["opencode.jsonc", "opencode.json"];
 
 const AGENTS_SOURCE = path.join(__dirname, "agents");
 const SKILLS_SOURCE = path.join(__dirname, "skills");
 
-const AGENT_DEFINITIONS = {
-  "superpawers:researcher": {
-    mode: "subagent",
-    description: "Explores codebase, gathers context, reports findings",
-    prompt: "{file:./agents/superpawers/superpawers-researcher.system.md}",
-    permission: { edit: "deny", bash: "allow" }
-  },
-  "superpawers:implementer": {
-    mode: "subagent",
-    description: "Implements tasks following TDD with isolated context",
-    prompt: "{file:./agents/superpawers/superpawers-implementer.system.md}",
-    permission: { edit: "allow", bash: "allow" }
-  },
-  "superpawers:reviewer": {
-    mode: "subagent",
-    description: "Reviews code quality, spec compliance, and production readiness",
-    prompt: "{file:./agents/superpawers/superpawers-reviewer.system.md}",
-    permission: { edit: "deny", bash: "deny" }
-  },
-  "superpawers:verifier": {
-    mode: "subagent",
-    description: "Runs tests, lint, and typecheck independently",
-    prompt: "{file:./agents/superpawers/superpawers-verifier.system.md}",
-    permission: { edit: "deny", bash: "allow" }
-  },
-  "superpawers:planner": {
-    mode: "subagent",
-    description: "Investigates codebase via researcher subagents and produces implementation plans",
-    prompt: "{file:./agents/superpawers/superpawers-planner.system.md}",
-    permission: { edit: "allow", bash: "deny" }
-  }
-};
+const AGENT_FILES = [
+  "superpawers-researcher.system.md",
+  "superpawers-implementer.system.md",
+  "superpawers-reviewer.system.md",
+  "superpawers-verifier.system.md",
+  "superpawers-planner.system.md"
+];
+
+const AGENT_IDS = AGENT_FILES.map((file) => file.replace(".system.md", ""));
+const LEGACY_AGENT_IDS = AGENT_IDS.map((id) => id.replace("superpawers-", "superpawers:"));
 
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = { mode: null, path: null, yes: false, uninstall: false };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--global") options.mode = "global";
-    else if (args[i] === "--local") options.mode = "local";
-    else if (args[i] === "--path" && args[i + 1]) options.path = args[++i];
-    else if (args[i] === "--yes") options.yes = true;
-    else if (args[i] === "--uninstall") options.uninstall = true;
+
+  for (let index = 0; index < args.length; index++) {
+    if (args[index] === "--global") options.mode = "global";
+    else if (args[index] === "--local") options.mode = "local";
+    else if (args[index] === "--path" && args[index + 1]) options.path = args[++index];
+    else if (args[index] === "--yes") options.yes = true;
+    else if (args[index] === "--uninstall") options.uninstall = true;
   }
+
   return options;
+}
+
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function resolveExistingConfigPath(root) {
+  for (const candidate of CONFIG_CANDIDATES) {
+    const configPath = path.join(root, candidate);
+    if (fs.existsSync(configPath)) {
+      return configPath;
+    }
+  }
+
+  return null;
+}
+
+function workspaceExists(root, isGlobal) {
+  if (resolveExistingConfigPath(root)) {
+    return true;
+  }
+
+  const opencodeDir = isGlobal ? root : path.join(root, ".opencode");
+  return fs.existsSync(opencodeDir);
 }
 
 function detectWorkspaces() {
   const detected = [];
-  if (fs.existsSync(GLOBAL_CONFIG)) detected.push("global");
-  if (fs.existsSync(LOCAL_CONFIG)) detected.push("local");
+  if (workspaceExists(GLOBAL_ROOT, true)) detected.push("global");
+  if (workspaceExists(process.cwd(), false)) detected.push("local");
   return detected;
 }
 
-function prompt(question) {
-  return new Promise((resolve) => {
-    process.stdout.write(question + " ");
-    process.stdin.once("data", (d) => {
-      resolve(d.toString().trim());
-    });
+function collectConfigPaths(root, isGlobal) {
+  const configPaths = [];
+  const configPath = resolveExistingConfigPath(root);
+  if (configPath) {
+    configPaths.push(configPath);
+  }
+
+  if (!isGlobal) {
+    const legacyConfigPath = path.join(root, ".opencode", "config.json");
+    if (fs.existsSync(legacyConfigPath)) {
+      configPaths.push(legacyConfigPath);
+    }
+  }
+
+  return [...new Set(configPaths)];
+}
+
+function getTargetPaths(options) {
+  if (options.mode === "global") {
+    return {
+      label: "global",
+      agentsDir: path.join(GLOBAL_ROOT, "agents"),
+      skillsDir: path.join(GLOBAL_ROOT, "skills", "superpawers"),
+      configPaths: collectConfigPaths(GLOBAL_ROOT, true)
+    };
+  }
+
+  const projectRoot = options.path || process.cwd();
+  return {
+    label: options.path ? `custom path (${projectRoot})` : "local",
+    agentsDir: path.join(projectRoot, ".opencode", "agents"),
+    skillsDir: path.join(projectRoot, ".opencode", "skills", "superpawers"),
+    configPaths: collectConfigPaths(projectRoot, false)
+  };
+}
+
+function readConfigFile(configPath) {
+  const text = fs.readFileSync(configPath, "utf8");
+  const errors = [];
+  const config = parse(text, errors, {
+    allowTrailingComma: true,
+    disallowComments: false
   });
+
+  if (errors.length > 0) {
+    const formattedErrors = errors
+      .map((error) => `${printParseErrorCode(error.error)} at offset ${error.offset}`)
+      .join(", ");
+    throw new Error(`Invalid config in ${configPath}: ${formattedErrors}`);
+  }
+
+  return { config, text };
 }
 
-function ensureDir(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+function writeConfigChanges(configPath, changes) {
+  if (changes.length === 0) {
+    return false;
   }
+
+  let text = fs.readFileSync(configPath, "utf8");
+  const originalText = text;
+
+  for (const change of changes) {
+    const edits = modify(text, change.path, change.value, {
+      formattingOptions: {
+        insertSpaces: true,
+        tabSize: 2,
+        eol: "\n"
+      }
+    });
+    text = applyEdits(text, edits);
+  }
+
+  if (text !== originalText) {
+    fs.writeFileSync(configPath, text);
+    return true;
+  }
+
+  return false;
 }
 
-function copyAgents(targetDir) {
-  ensureDir(targetDir);
-  const files = fs.readdirSync(AGENTS_SOURCE).filter(f => f.endsWith(".system.md"));
-  for (const file of files) {
-    const src = path.join(AGENTS_SOURCE, file);
-    const dst = path.join(targetDir, file);
-    fs.copyFileSync(src, dst);
-    console.log(`Copied: ${file}`);
+function collectConfigModels(config, models) {
+  if (typeof config.model === "string" && config.model.trim()) {
+    models.add(config.model.trim());
   }
-}
 
-function copySkills(target, sourceDir) {
-  if (fs.existsSync(target)) {
-    fs.rmSync(target, { recursive: true, force: true });
+  if (typeof config.small_model === "string" && config.small_model.trim()) {
+    models.add(config.small_model.trim());
   }
-  function copyDir(src, dst) {
-    ensureDir(dst);
-    for (const entry of fs.readdirSync(src)) {
-      const srcPath = path.join(src, entry);
-      const dstPath = path.join(dst, entry);
-      if (fs.statSync(srcPath).isDirectory()) {
-        copyDir(srcPath, dstPath);
-      } else {
-        fs.copyFileSync(srcPath, dstPath);
+
+  if (config.agent && typeof config.agent === "object") {
+    for (const agentConfig of Object.values(config.agent)) {
+      if (agentConfig && typeof agentConfig.model === "string" && agentConfig.model.trim()) {
+        models.add(agentConfig.model.trim());
       }
     }
   }
-  copyDir(sourceDir, target);
-  console.log(`Copied: ${target} <- ${sourceDir}`);
+
+  if (!config.provider || typeof config.provider !== "object") {
+    return;
+  }
+
+  for (const [providerId, providerConfig] of Object.entries(config.provider)) {
+    if (!providerConfig || typeof providerConfig !== "object") {
+      continue;
+    }
+
+    const providerModels = providerConfig.models;
+    if (!providerModels || typeof providerModels !== "object") {
+      continue;
+    }
+
+    for (const modelId of Object.keys(providerModels)) {
+      models.add(`${providerId}/${modelId}`);
+    }
+  }
 }
 
-function removeAgents(targetDir) {
+function discoverModelCandidates(configPaths) {
+  const models = new Set();
+
+  for (const configPath of configPaths) {
+    try {
+      const { config } = readConfigFile(configPath);
+      collectConfigModels(config, models);
+    } catch (error) {
+      console.warn(`Warning: ${error.message}`);
+    }
+  }
+
+  return [...models].sort();
+}
+
+function cleanupLegacyConfig(configPath) {
+  try {
+    const { config } = readConfigFile(configPath);
+    const changes = [];
+
+    if (Array.isArray(config.plugin)) {
+      const nextPlugin = config.plugin.filter((entry) => {
+        if (typeof entry === "string") {
+          return entry !== LEGACY_PLUGIN_PACKAGE;
+        }
+
+        if (Array.isArray(entry)) {
+          return entry[0] !== LEGACY_PLUGIN_PACKAGE;
+        }
+
+        return true;
+      });
+
+      changes.push({
+        path: ["plugin"],
+        value: nextPlugin.length > 0 ? nextPlugin : undefined
+      });
+    }
+
+    if (config.agent && typeof config.agent === "object") {
+      const nextAgent = { ...config.agent };
+      for (const agentId of [...AGENT_IDS, ...LEGACY_AGENT_IDS]) {
+        delete nextAgent[agentId];
+      }
+
+      changes.push({
+        path: ["agent"],
+        value: Object.keys(nextAgent).length > 0 ? nextAgent : undefined
+      });
+    }
+
+    return writeConfigChanges(configPath, changes);
+  } catch (error) {
+    console.warn(`Warning: unable to clean legacy config in ${configPath}: ${error.message}`);
+    return false;
+  }
+}
+
+function removeInstalledAgents(targetDir) {
+  if (!fs.existsSync(targetDir)) {
+    return;
+  }
+
+  for (const entry of fs.readdirSync(targetDir)) {
+    const entryPath = path.join(targetDir, entry);
+    if (entry === "superpawers") {
+      fs.rmSync(entryPath, { recursive: true, force: true });
+      continue;
+    }
+
+    if (entry.startsWith("superpawers-") && entry.endsWith(".md")) {
+      fs.rmSync(entryPath, { force: true });
+    }
+  }
+}
+
+function removeSkillsDir(targetDir) {
   if (fs.existsSync(targetDir)) {
     fs.rmSync(targetDir, { recursive: true, force: true });
     console.log(`Removed: ${targetDir}`);
   }
 }
 
-function removeSkillsDir(target) {
-  if (fs.existsSync(target)) {
-    fs.rmSync(target, { recursive: true, force: true });
-    console.log(`Removed: ${target}`);
+function renderAgentMarkdown(content, model) {
+  const normalizedContent = content.replace(/\r\n/g, "\n");
+  const lines = normalizedContent.split("\n");
+  if (lines[0] !== "---") {
+    return content;
+  }
+
+  const closingIndex = lines.indexOf("---", 1);
+  if (closingIndex === -1) {
+    return content;
+  }
+
+  const frontmatterLines = lines
+    .slice(1, closingIndex)
+    .filter((line) => !line.startsWith("model:"));
+
+  if (model) {
+    const modeIndex = frontmatterLines.findIndex((line) => line.startsWith("mode:"));
+    const insertionIndex = modeIndex >= 0 ? modeIndex + 1 : frontmatterLines.length;
+    frontmatterLines.splice(insertionIndex, 0, `model: ${model}`);
+  }
+
+  const bodyLines = lines.slice(closingIndex + 1);
+  return ["---", ...frontmatterLines, "---", ...bodyLines].join("\n");
+}
+
+function copyAgents(targetDir, selectedModels) {
+  ensureDir(targetDir);
+  removeInstalledAgents(targetDir);
+
+  for (const file of AGENT_FILES) {
+    const sourcePath = path.join(AGENTS_SOURCE, file);
+    const agentId = file.replace(".system.md", "");
+    const targetPath = path.join(targetDir, `${agentId}.md`);
+    const content = fs.readFileSync(sourcePath, "utf8");
+    const rendered = renderAgentMarkdown(content, selectedModels[agentId]);
+    fs.writeFileSync(targetPath, rendered);
+    console.log(`Installed agent: ${targetPath}`);
   }
 }
 
-function readConfig(configPath) {
-  const content = fs.readFileSync(configPath, "utf-8");
-  return JSON.parse(content);
-}
+function copySkills(targetDir, sourceDir) {
+  if (fs.existsSync(targetDir)) {
+    fs.rmSync(targetDir, { recursive: true, force: true });
+  }
 
-function writeConfig(configPath, config) {
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-}
-
-function addAgentsToConfig(configPath) {
-  const config = readConfig(configPath);
-  if (!config.agent) config.agent = {};
-  for (const [key, value] of Object.entries(AGENT_DEFINITIONS)) {
-    if (!config.agent[key]) {
-      config.agent[key] = value;
-      console.log(`Added agent: ${key}`);
+  function copyDir(source, target) {
+    ensureDir(target);
+    for (const entry of fs.readdirSync(source)) {
+      const sourcePath = path.join(source, entry);
+      const targetPath = path.join(target, entry);
+      if (fs.statSync(sourcePath).isDirectory()) {
+        copyDir(sourcePath, targetPath);
+      } else {
+        fs.copyFileSync(sourcePath, targetPath);
+      }
     }
   }
-  writeConfig(configPath, config);
+
+  copyDir(sourceDir, targetDir);
+  console.log(`Installed skills: ${targetDir}`);
 }
 
-function removeAgentsFromConfig(configPath) {
-  if (!fs.existsSync(configPath)) return;
-  const config = readConfig(configPath);
-  if (!config.agent) return;
-  let removed = false;
-  for (const key of Object.keys(AGENT_DEFINITIONS)) {
-    if (config.agent[key]) {
-      delete config.agent[key];
-      removed = true;
+function cancelPrompt() {
+  console.log("Cancelled.");
+  process.exit(0);
+}
+
+async function confirmPrompt(message, initial) {
+  const response = await prompts(
+    {
+      type: "confirm",
+      name: "confirmed",
+      message,
+      initial
+    },
+    {
+      onCancel: cancelPrompt
+    }
+  );
+
+  return Boolean(response.confirmed);
+}
+
+async function chooseWorkspace(options, available) {
+  if (options.mode || options.path) {
+    return;
+  }
+
+  if (available.length === 0) {
+    console.error("No OpenCode workspace detected. Run with --global, --local, or --path <path>.");
+    process.exit(1);
+  }
+
+  if (available.length === 1) {
+    options.mode = available[0];
+    return;
+  }
+
+  if (options.yes) {
+    options.mode = "local";
+    return;
+  }
+
+  const response = await prompts(
+    {
+      type: "select",
+      name: "mode",
+      message: "Install into which OpenCode workspace?",
+      initial: 1,
+      choices: [
+        { title: "Global (~/.config/opencode)", value: "global" },
+        { title: "Local (.opencode in current project)", value: "local" }
+      ]
+    },
+    {
+      onCancel: cancelPrompt
+    }
+  );
+
+  options.mode = response.mode;
+}
+
+async function chooseAgentModels(availableModels, options) {
+  const selectedModels = {};
+
+  if (availableModels.length === 0) {
+    console.warn("Warning: no models were found in the selected OpenCode config.");
+    const continueWithoutModel = options.yes
+      ? true
+      : await confirmPrompt(
+        "Install SuperPawers without a model attribute on the agents?",
+        true
+      );
+
+    if (!continueWithoutModel) {
+      console.log("Cancelled.");
+      process.exit(0);
+    }
+
+    return selectedModels;
+  }
+
+  if (availableModels.length === 1) {
+    const onlyModel = availableModels[0];
+    const applySingleModel = options.yes
+      ? false
+      : await confirmPrompt(
+        `Found one model candidate (${onlyModel}). Apply it to all SuperPawers agents?`,
+        false
+      );
+
+    if (applySingleModel) {
+      for (const agentId of AGENT_IDS) {
+        selectedModels[agentId] = onlyModel;
+      }
+    }
+
+    return selectedModels;
+  }
+
+  if (options.yes) {
+    return selectedModels;
+  }
+
+  for (const agentId of AGENT_IDS) {
+    const response = await prompts(
+      {
+        type: "select",
+        name: "model",
+        message: `Model for ${agentId}?`,
+        initial: 0,
+        choices: [
+          { title: "Leave unset (inherit caller)", value: null },
+          ...availableModels.map((model) => ({ title: model, value: model }))
+        ]
+      },
+      {
+        onCancel: cancelPrompt
+      }
+    );
+
+    if (response.model) {
+      selectedModels[agentId] = response.model;
     }
   }
-  if (removed) {
-    writeConfig(configPath, config);
-    console.log(`Removed superpawers agents from: ${configPath}`);
-  }
+
+  return selectedModels;
 }
 
 async function runInstall(options) {
   const available = detectWorkspaces();
+  await chooseWorkspace(options, available);
 
-  let targetConfig, agentsTarget, skillsTarget, targetLabel;
+  const target = getTargetPaths(options);
+  const availableModels = discoverModelCandidates(target.configPaths);
+  const selectedModels = await chooseAgentModels(availableModels, options);
 
-  if (options.mode === "global") {
-    targetConfig = GLOBAL_CONFIG;
-    agentsTarget = GLOBAL_AGENTS;
-    skillsTarget = GLOBAL_SKILLS;
-    targetLabel = "global";
-  } else if (options.mode === "local") {
-    targetConfig = LOCAL_CONFIG;
-    agentsTarget = LOCAL_AGENTS;
-    skillsTarget = LOCAL_SKILLS;
-    targetLabel = "local";
-  } else if (options.path) {
-    targetConfig = path.join(options.path, ".opencode", "config.json");
-    agentsTarget = path.join(options.path, ".opencode", "agents", "superpawers");
-    skillsTarget = path.join(options.path, ".opencode", "skills", "superpawers");
-    targetLabel = `custom path (${options.path})`;
-  } else {
-    console.log(`Detected workspaces: ${available.join(", ")}`);
+  console.log(`Installing to: ${target.label}`);
+  console.log(`Agents: ${target.agentsDir}`);
+  console.log(`Skills: ${target.skillsDir}`);
 
-    if (available.length === 0) {
-      console.error("No workspace detected. Run with --global, --local, or --path <path>");
-      process.exit(1);
-    }
+  copyAgents(target.agentsDir, selectedModels);
+  copySkills(target.skillsDir, SKILLS_SOURCE);
 
-    if (available.includes("global") && available.includes("local")) {
-      const answer = options.yes ? "local" : (await prompt("Use global or local? [local]")) || "local";
-      options.mode = answer;
-    } else {
-      options.mode = available[0];
-    }
-
-    return runInstall(options);
-  }
-
-  console.log(`Installing to: ${targetLabel}`);
-  console.log(`Agents: ${agentsTarget}`);
-  console.log(`Skills: ${skillsTarget}`);
-
-  copyAgents(agentsTarget);
-  copySkills(skillsTarget, SKILLS_SOURCE);
-
-  const addAgents = options.yes || (await prompt("Add superpawers agents to config? [Y/n]")) !== "n";
-  if (addAgents) {
-    if (fs.existsSync(targetConfig)) {
-      addAgentsToConfig(targetConfig);
-    } else {
-      console.log(`Config not found: ${targetConfig} - skipping agent config`);
+  for (const configPath of target.configPaths) {
+    if (cleanupLegacyConfig(configPath)) {
+      console.log(`Cleaned legacy SuperPawers config: ${configPath}`);
     }
   }
 
-  console.log("Setup complete!");
+  console.log("Install complete!");
 }
 
 async function runUninstall(options) {
   const available = detectWorkspaces();
+  await chooseWorkspace(options, available);
 
-  let agentsTarget, skillsTarget, targetConfig, targetLabel;
+  const target = getTargetPaths(options);
+  const shouldRemove = options.yes
+    ? true
+    : await confirmPrompt(
+      "Remove installed SuperPawers agents, skills, and legacy config entries?",
+      false
+    );
 
-  if (options.mode === "global") {
-    agentsTarget = GLOBAL_AGENTS;
-    skillsTarget = GLOBAL_SKILLS;
-    targetConfig = GLOBAL_CONFIG;
-    targetLabel = "global";
-  } else if (options.mode === "local") {
-    agentsTarget = LOCAL_AGENTS;
-    skillsTarget = LOCAL_SKILLS;
-    targetConfig = LOCAL_CONFIG;
-    targetLabel = "local";
-  } else if (options.path) {
-    agentsTarget = path.join(options.path, ".opencode", "agents", "superpawers");
-    skillsTarget = path.join(options.path, ".opencode", "skills", "superpawers");
-    targetConfig = path.join(options.path, ".opencode", "config.json");
-    targetLabel = `custom path (${options.path})`;
-  } else {
-    console.log(`Detected workspaces: ${available.join(", ")}`);
-
-    if (available.length === 0) {
-      console.error("No workspace detected.");
-      process.exit(1);
-    }
-
-    options.mode = available[0];
-    return runUninstall(options);
-  }
-
-  const confirm = options.yes || (await prompt("Delete agents/superpawers/ and skills/superpawers? [y/N]")) === "y";
-  if (!confirm) {
+  if (!shouldRemove) {
     console.log("Cancelled.");
     return;
   }
 
-  console.log(`Uninstalling from: ${targetLabel}`);
+  console.log(`Uninstalling from: ${target.label}`);
+  removeInstalledAgents(target.agentsDir);
+  removeSkillsDir(target.skillsDir);
 
-  removeAgents(agentsTarget);
-  removeSkillsDir(skillsTarget);
-
-  removeAgentsFromConfig(targetConfig);
+  for (const configPath of target.configPaths) {
+    if (cleanupLegacyConfig(configPath)) {
+      console.log(`Removed legacy SuperPawers config entries from: ${configPath}`);
+    }
+  }
 
   console.log("Uninstall complete!");
 }
@@ -281,4 +528,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error.message || error);
+  process.exit(1);
+});

@@ -1,3 +1,8 @@
+---
+name: condition-based-waiting
+description: Use when tests have race conditions, timing dependencies, or pass and fail inconsistently, especially when tests use arbitrary delays like setTimeout or sleep
+---
+
 # Condition-Based Waiting
 
 ## Overview
@@ -34,12 +39,12 @@ digraph when_to_use {
 ## Core Pattern
 
 ```typescript
-// ❌ BEFORE: Guessing at timing
+// BEFORE: Guessing at timing
 await new Promise(r => setTimeout(r, 50));
 const result = getResult();
 expect(result).toBeDefined();
 
-// ✅ AFTER: Waiting for condition
+// AFTER: Waiting for condition
 await waitFor(() => getResult() !== undefined);
 const result = getResult();
 expect(result).toBeDefined();
@@ -58,6 +63,7 @@ expect(result).toBeDefined();
 ## Implementation
 
 Generic polling function:
+
 ```typescript
 async function waitFor<T>(
   condition: () => T | undefined | null | false,
@@ -74,23 +80,20 @@ async function waitFor<T>(
       throw new Error(`Timeout waiting for ${description} after ${timeoutMs}ms`);
     }
 
-    await new Promise(r => setTimeout(r, 10)); // Poll every 10ms
+    await new Promise(r => setTimeout(r, 10));
   }
 }
 ```
 
-See `condition-based-waiting-example.ts` in this directory for complete implementation with domain-specific helpers (`waitForEvent`, `waitForEventCount`, `waitForEventMatch`) from actual debugging session.
+See `condition-based-waiting-example.ts` in this directory for a complete implementation with domain-specific helpers (`waitForEvent`, `waitForEventCount`, `waitForEventMatch`).
 
 ## Common Mistakes
 
-**❌ Polling too fast:** `setTimeout(check, 1)` - wastes CPU
-**✅ Fix:** Poll every 10ms
-
-**❌ No timeout:** Loop forever if condition never met
-**✅ Fix:** Always include timeout with clear error
-
-**❌ Stale data:** Cache state before loop
-**✅ Fix:** Call getter inside loop for fresh data
+| Mistake | Fix |
+|---------|-----|
+| Polling too fast: `setTimeout(check, 1)` | Poll every 10ms |
+| No timeout: loop forever | Always include timeout with clear error |
+| Stale data: cache state before loop | Call getter inside loop for fresh data |
 
 ## When Arbitrary Timeout IS Correct
 
@@ -106,10 +109,8 @@ await new Promise(r => setTimeout(r, 200));   // Then: wait for timed behavior
 2. Based on known timing (not guessing)
 3. Comment explaining WHY
 
-## Real-World Impact
+## Related Skills
 
-From debugging session (2025-10-03):
-- Fixed 15 flaky tests across 3 files
-- Pass rate: 60% → 100%
-- Execution time: 40% faster
-- No more race conditions
+- **superpawers:root-cause-tracing** - Trace flaky behavior to its source
+- **superpawers:systematic-debugging** - The full debugging discipline this technique supports
+- **superpawers:defense-in-depth** - Add validation layers around async operations

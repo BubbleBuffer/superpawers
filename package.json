@@ -1,7 +1,7 @@
 {
   "name": "@bubblebuffer/superpawers",
   "version": "0.3.2",
-  "description": "Quick setup for SuperPawers skills and agents - subagent-driven development workflow",
+  "description": "Quick setup for SuperPawers skills and markdown agents for OpenCode",
   "bin": {
     "superpawers": "./superpawers"
   },
@@ -13,9 +13,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1",
+    "prompts": "^2.4.2"
+  },
   "scripts": {},
   "keywords": [
-    "opencode",
     "skills",
     "agents",
     "subagents",

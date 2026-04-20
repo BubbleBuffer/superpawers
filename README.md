@@ -1,6 +1,6 @@
 # SuperPawers
 
-Opinionated AI coding workflow Skills and Agent for OpenCode — subagent-driven development with fail-fast and human-in-the-loop recovery. Fork of [Superpowers](https://github.com/obra/superpowers).
+Opinionated AI coding workflow skills and subagents for OpenCode. SuperPawers installs markdown-discovered agents plus a namespaced skill library for subagent-driven development with fail-fast and human-in-the-loop recovery. Fork of [Superpowers](https://github.com/obra/superpowers).
 
 ## Quick Setup
 
@@ -9,53 +9,72 @@ npx @bubblebuffer/superpawers
 ```
 
 This will:
-1. Detect global (`~/.config/opencode/`) and local (`./.opencode/config.json`) workspaces
-2. Copy agents to `~/.config/opencode/agents/superpawers/`
-3. Copy skills to `~/.config/opencode/skills/superpawers/`
-4. Prompt to add agent definitions to your opencode.json
+1. Detect a global OpenCode workspace in `~/.config/opencode/` or a project workspace in the current repository
+2. Install markdown agents into `~/.config/opencode/agents/` or `./.opencode/agents/`
+3. Install skills into `~/.config/opencode/skills/superpawers/` or `./.opencode/skills/superpawers/`
+4. Read available model candidates from your OpenCode config and let you choose a model per agent when more than one is available
+5. Remove legacy SuperPawers plugin entries and old `superpawers:*` config agents during migration
+
+Project config is read from `opencode.json` or `opencode.jsonc` in the project root. Agent files are installed into `.opencode/agents/` using OpenCode's markdown agent discovery.
 
 ### Options
 
 - `--global` - Use global workspace
 - `--local` - Use local workspace (current directory)
 - `--path <path>` - Use custom workspace path
-- `--yes` - Skip prompts (use defaults)
-- `--uninstall` - Remove installed files and config entries
+- `--yes` - Skip prompts and use safe defaults (leave models unset)
+- `--uninstall` - Remove installed files and legacy config entries
+
+## Model Selection
+
+SuperPawers reads model candidates from the selected OpenCode config using these sources:
+
+- `provider.*.models`
+- top-level `model`
+- top-level `small_model`
+- any existing `agent.*.model` values
+
+Install behavior:
+
+- If more than one model is available, the installer prompts for a model per agent with a `Leave unset` option.
+- If exactly one model is available, the installer asks whether to apply it.
+- If no models are found, the installer warns and asks whether to install with no `model:` field.
+
+Leaving `model` unset is valid: OpenCode will let subagents inherit the caller's model.
 
 ## Example Configuration
 
-This setup uses MiniMax M2.7 for subagent coding tasks with zai-coding-plan for orchestration:
-
-```json
+```jsonc
 {
     "$schema": "https://opencode.ai/config.json",
-    "agent": {
-        "superpawers:researcher": {
-            "mode": "subagent",
-            "model": "minimax-anthropic/MiniMax-M2.7"
-        },
-        "superpawers:implementer": {
-            "mode": "subagent",
-            "model": "zai-coding-plan/glm-5.1"
-        },
-        "superpawers:reviewer": {
-            "mode": "subagent",
-            "model": "minimax-anthropic/MiniMax-M2.7"
-        },
-        "superpawers:verifier": {
-            "mode": "subagent",
-            "model": "minimax-anthropic/MiniMax-M2.7"
+    "model": "minimax-anthropic/MiniMax-M2.7",
+    "provider": {
+        "openai": {
+            "models": {
+                "gpt-5": {},
+                "gpt-5.1-codex": {}
+            }
         }
-    },
-    "plugin": [
-        "@bubblebuffer/superpawers-opencode"
-    ],
+    }
 }
 ```
 
-## Agent Types
+An installed agent file can then look like this:
 
-SuperPawers uses `-` separator (not `:`) for agent names:
+```md
+---
+description: Implements tasks following TDD with isolated context
+mode: subagent
+model: openai/gpt-5.1-codex
+permission:
+    edit: allow
+    bash: allow
+---
+
+You are a SuperPawers implementer subagent.
+```
+
+## Agent Names
 
 | Agent | Purpose |
 |-------|---------|
@@ -84,6 +103,9 @@ Supporting skills activate inside this flow:
 | `test-driven-development` | Discipline enforced by implementer subagents during step 4 |
 | `verification-before-completion` | Gate applied before any completion claim, commit, or handoff |
 | `systematic-debugging` | Entry point when a bug, failure, or regression interrupts the flow |
+| `root-cause-tracing` | Trace bugs backward through call stack to find the original trigger |
+| `defense-in-depth` | Add validation at every layer after fixing a bug |
+| `condition-based-waiting` | Replace arbitrary timeouts with condition polling for flaky tests |
 | `requesting-code-review` | Ad-hoc or milestone review outside the automated two-stage review |
 | `receiving-code-review` | Handling incoming human or external review feedback |
 | `dispatching-parallel-agents` | Parallel research or investigation across independent domains |

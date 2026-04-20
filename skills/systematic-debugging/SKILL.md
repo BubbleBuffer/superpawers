@@ -61,7 +61,7 @@ You MUST complete each phase before proceeding to the next.
    - Can you trigger it reliably?
    - What are the exact steps?
    - Does it happen every time?
-   - If not reproducible → gather more data, don't guess
+   - If not reproducible -> gather more data, don't guess
 
 3. **Check Recent Changes**
    - What changed that could cause this?
@@ -71,53 +71,15 @@ You MUST complete each phase before proceeding to the next.
 
 4. **Gather Evidence in Multi-Component Systems**
 
-   **WHEN system has multiple components (CI → build → signing, API → service → database):**
+   WHEN system has multiple components (CI -> build -> signing, API -> service -> database):
 
-   **BEFORE proposing fixes, add diagnostic instrumentation:**
-   ```
-   For EACH component boundary:
-     - Log what data enters component
-     - Log what data exits component
-     - Verify environment/config propagation
-     - Check state at each layer
+   BEFORE proposing fixes, add diagnostic instrumentation at EACH component boundary. Log what enters, what exits, verify config propagation, check state at each layer.
 
-   Run once to gather evidence showing WHERE it breaks
-   THEN analyze evidence to identify failing component
-   THEN investigate that specific component
-   ```
-
-   **Example (multi-layer system):**
-   ```bash
-   # Layer 1: Workflow
-   echo "=== Secrets available in workflow: ==="
-   echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
-
-   # Layer 2: Build script
-   echo "=== Env vars in build script: ==="
-   env | grep IDENTITY || echo "IDENTITY not in environment"
-
-   # Layer 3: Signing script
-   echo "=== Keychain state: ==="
-   security list-keychains
-   security find-identity -v
-
-   # Layer 4: Actual signing
-   codesign --sign "$IDENTITY" --verbose=4 "$APP"
-   ```
-
-   **This reveals:** Which layer fails (secrets → workflow ✓, workflow → build ✗)
+   Run once to gather evidence showing WHERE it breaks, THEN analyze evidence to identify the failing component, THEN investigate that component.
 
 5. **Trace Data Flow**
 
-   **WHEN error is deep in call stack:**
-
-   See `root-cause-tracing.md` in this directory for the complete backward tracing technique.
-
-   **Quick version:**
-   - Where does bad value originate?
-   - What called this with bad value?
-   - Keep tracing up until you find the source
-   - Fix at source, not at symptom
+   WHEN error is deep in call stack: trace backward through the call chain until you find the original trigger. See **superpawers:root-cause-tracing** for the complete backward tracing technique.
 
 ### Phase 2: Pattern Analysis
 
@@ -157,7 +119,7 @@ You MUST complete each phase before proceeding to the next.
    - Don't fix multiple things at once
 
 3. **Verify Before Continuing**
-   - Did it work? Yes → Phase 4
+   - Did it work? Yes -> Phase 4
    - Didn't work? Form NEW hypothesis
    - DON'T add more fixes on top
 
@@ -176,7 +138,7 @@ You MUST complete each phase before proceeding to the next.
    - Automated test if possible
    - One-off test script if no framework
    - MUST have before fixing
-   - Use the `superpawers:test-driven-development` skill for writing proper failing tests
+   - Use **superpawers:test-driven-development** for writing proper failing tests
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -193,7 +155,7 @@ You MUST complete each phase before proceeding to the next.
    - STOP
    - Count: How many fixes have you tried?
    - If < 3: Return to Phase 1, re-analyze with new information
-   - **If ≥ 3: STOP and question the architecture (step 5 below)**
+   - **If >= 3: STOP and question the architecture (step 5 below)**
    - DON'T attempt Fix #4 without architectural discussion
 
 5. **If 3+ Fixes Failed: Question Architecture**
@@ -252,7 +214,7 @@ If you catch yourself thinking:
 | "I'll write test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
 | "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
 | "Reference too long, I'll adapt the pattern" | Partial understanding guarantees bugs. Read it completely. |
-| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause. |
+| "I see the problem, let me fix it" | Seeing symptoms != understanding root cause. |
 | "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question pattern, don't fix again. |
 
 ## Quick Reference
@@ -275,23 +237,16 @@ If systematic investigation reveals issue is truly environmental, timing-depende
 
 **But:** 95% of "no root cause" cases are incomplete investigation.
 
-## Supporting Techniques
+## Technique Skills
 
-These techniques are part of systematic debugging and available in this directory:
+These independent skills support the debugging process:
 
-- **`root-cause-tracing.md`** - Trace bugs backward through call stack to find original trigger
-- **`defense-in-depth.md`** - Add validation at multiple layers after finding root cause
-- **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
+- **superpawers:root-cause-tracing** - Trace bugs backward through call stack to find original trigger (Phase 1)
+- **superpawers:defense-in-depth** - Add validation at multiple layers after finding root cause (Phase 4)
+- **superpawers:condition-based-waiting** - Replace arbitrary timeouts with condition polling (for flaky tests)
 
-**Related skills:**
+## Related Skills
+
 - **superpawers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
 - **superpawers:verification-before-completion** - Verify fix worked before claiming success
 - **superpawers:dispatching-parallel-agents** - For parallel evidence gathering in Phase 1 (multiple independent components to investigate)
-
-## Real-World Impact
-
-From debugging sessions:
-- Systematic approach: 15-30 minutes to fix
-- Random fixes approach: 2-3 hours of thrashing
-- First-time fix rate: 95% vs 40%
-- New bugs introduced: Near zero vs common

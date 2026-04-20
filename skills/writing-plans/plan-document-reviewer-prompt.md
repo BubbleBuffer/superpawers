@@ -11,7 +11,7 @@ Use this template when dispatching a plan document reviewer subagent.
 **Dispatch after:** The complete plan is written.
 
 ```
-@superpawers:reviewer: "Review plan document"
+@superpawers-reviewer: "Review plan document"
 
 You are a plan document reviewer. Verify this plan is complete and ready for implementation.
 

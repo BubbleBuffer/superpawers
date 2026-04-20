@@ -126,7 +126,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Prompt Templates
 
-Agent base prompts live in `agents/`. Skills provide task-specific context when dispatching via `@superpawers:implementer`, `@superpawers:reviewer`, `@superpawers:verifier`:
+Agent base prompts live in `agents/`. Skills provide task-specific context when dispatching via `@superpawers-implementer`, `@superpawers-reviewer`, `@superpawers-verifier`:
 
 - `implementer.template.md` - Implementer template (in same directory)
 - `reviewer.template.md` - Reviewer template (skills specify review focus: spec compliance, code quality, full review)
@@ -134,7 +134,7 @@ Agent base prompts live in `agents/`. Skills provide task-specific context when 
 
 **Dispatch format:**
 ```
-@superpawers:implementer: "Implement Task N: [task name]"
+@superpawers-implementer: "Implement Task N: [task name]"
 
 [Paste full task text from plan]
 [Paste relevant context]

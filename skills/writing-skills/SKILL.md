@@ -356,8 +356,8 @@ When: All content fits, no heavy reference needed
 ### Skill with Reusable Tool
 ```
 condition-based-waiting/
-  SKILL.md    # Overview + patterns
-  example.ts  # Working helpers to adapt
+  SKILL.md                              # Overview + patterns
+  condition-based-waiting-example.ts    # Working helpers to adapt
 ```
 When: Tool is reusable code, not just narrative
 
@@ -410,7 +410,7 @@ Different skill types need different test approaches:
 
 ### Technique Skills (how-to guides)
 
-**Examples:** condition-based-waiting, root-cause-tracing, defensive-programming
+**Examples:** condition-based-waiting, root-cause-tracing, defense-in-depth
 
 **Test with:**
 - Application scenarios: Can they apply the technique correctly?
