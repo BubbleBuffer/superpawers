@@ -3,21 +3,32 @@
   "version": "0.3.3",
   "description": "Quick setup for SuperPawers skills and markdown agents for OpenCode",
   "bin": {
-    "superpawers": "./superpawers"
+    "superpawers": "./dist/main.js"
   },
+  "main": "./dist/main.js",
   "files": [
+    "dist/",
     "agents/",
-    "skills/",
-    "superpawers"
+    "skills/"
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1",
     "prompts": "^2.4.2"
   },
-  "scripts": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
   "keywords": [
     "skills",
     "agents",
