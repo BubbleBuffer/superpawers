@@ -1,6 +1,6 @@
 {
   "name": "@bubblebuffer/superpawers",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Quick setup for SuperPawers skills and markdown agents for OpenCode",
   "bin": {
     "superpawers": "./dist/main.js"
