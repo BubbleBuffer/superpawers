@@ -1,6 +1,7 @@
 # SuperPawers
 
 Opinionated AI coding workflow skills and subagents for OpenCode. SuperPawers installs markdown-discovered agents plus a namespaced skill library for subagent-driven development with fail-fast and human-in-the-loop recovery. Fork of [Superpowers](https://github.com/obra/superpowers).
+This removes some of Superpowers' "generalist"-focused implementations and narrows the context to a strict, human-in-the-loop, feature-by-feature implementation strategy. Worktrees have been replaced with branches, since branches are easier for agents to track and conceptualize. For planning, a new dedicated "planning" subagent has been added; you can configure it to a larger model to allow a small-to-medium model to orchestrate. I'm still experimenting with this approach, and the prompt modifications haven't been fully tested yet. This project exists purely to set up a skill tailored to my general workflow.
 
 ## Quick Setup
 
@@ -15,7 +16,6 @@ This will:
 2. Install markdown agents into `~/.config/opencode/agents/` or `./.opencode/agents/`
 3. Install skills into `~/.config/opencode/skills/superpawers/` or `./.opencode/skills/superpawers/`
 4. Read available model candidates from your OpenCode config and let you choose a model per agent when more than one is available
-5. Remove legacy SuperPawers plugin entries and old `superpawers:*` config agents during migration
 
 Project config is read from `opencode.json` or `opencode.jsonc` in the project root. Agent files are installed into `.opencode/agents/` using OpenCode's markdown agent discovery.
 
@@ -45,23 +45,6 @@ Install behavior:
 Leaving `model` unset is valid: OpenCode will let subagents inherit the caller's model.
 
 ## Example Configuration
-
-```jsonc
-{
-    "$schema": "https://opencode.ai/config.json",
-    "model": "minimax-anthropic/MiniMax-M2.7",
-    "provider": {
-        "openai": {
-            "models": {
-                "gpt-5": {},
-                "gpt-5.1-codex": {}
-            }
-        }
-    }
-}
-```
-
-An installed agent file can then look like this:
 
 ```md
 ---
