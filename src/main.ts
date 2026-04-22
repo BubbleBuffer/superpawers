@@ -14,7 +14,6 @@ import {
 } from "./logic/workspace";
 import type { CliOptions, WorkspaceInfo, TargetPaths } from "./logic/workspace";
 import { installAgents, AGENT_IDS } from "./logic/agents";
-import { cleanupLegacyConfig } from "./logic/legacy";
 
 // --- Argument Parsing ---
 
@@ -185,14 +184,6 @@ async function runInstall(options: CliOptions): Promise<void> {
     output.log(`Installed skills: ${targets.skillsDir}`);
   }
 
-  for (const configPath of targets.configPaths) {
-    try {
-      cleanupLegacyConfig(configPath);
-    } catch {
-      // Skip configs that can't be processed
-    }
-  }
-
   output.log("SuperPawers installed successfully!");
 }
 
@@ -221,14 +212,6 @@ async function runUninstall(options: CliOptions): Promise<void> {
 
   if (fs.existsSync(targets.skillsDir)) {
     removeDir(targets.skillsDir);
-  }
-
-  for (const configPath of targets.configPaths) {
-    try {
-      cleanupLegacyConfig(configPath);
-    } catch {
-      // Skip configs that can't be processed
-    }
   }
 
   output.log("SuperPawers uninstalled successfully!");

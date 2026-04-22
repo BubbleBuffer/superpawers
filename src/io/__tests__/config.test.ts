@@ -4,7 +4,6 @@ import * as path from "path";
 import * as os from "os";
 import {
   readConfig,
-  writeConfigChanges,
   extractModels,
   discoverModelCandidates,
 } from "../config";
@@ -102,41 +101,6 @@ describe("io/config", () => {
       const config = { theme: "dark" };
       const models = extractModels(config);
       expect(models).toEqual([]);
-    });
-  });
-
-  describe("writeConfigChanges", () => {
-    it("applies config modifications via jsonc-parser", () => {
-      const configPath = path.join(tmpDir, "write.jsonc");
-      fs.writeFileSync(configPath, '{\n  "model": "gpt-4"\n}\n');
-      const { text } = readConfig(configPath);
-      const edits = modify(text, ["model"], "claude-3", {
-        formattingOptions: { tabSize: 2, insertSpaces: true },
-      });
-      const changed = writeConfigChanges(configPath, text, edits);
-      expect(changed).toBe(true);
-      const { config: updated } = readConfig(configPath);
-      expect(updated.model).toBe("claude-3");
-    });
-
-    it("returns false when no edits provided", () => {
-      const configPath = path.join(tmpDir, "noop.jsonc");
-      fs.writeFileSync(configPath, '{ "model": "gpt-4" }');
-      const { text } = readConfig(configPath);
-      const changed = writeConfigChanges(configPath, text, []);
-      expect(changed).toBe(false);
-    });
-
-    it("returns false when edits produce no change", () => {
-      const configPath = path.join(tmpDir, "same.jsonc");
-      const original = '{ "model": "gpt-4" }';
-      fs.writeFileSync(configPath, original);
-      const { text } = readConfig(configPath);
-      const edits = modify(text, ["model"], "gpt-4", {
-        formattingOptions: { tabSize: 2, insertSpaces: true },
-      });
-      const changed = writeConfigChanges(configPath, text, edits);
-      expect(changed).toBe(false);
     });
   });
 

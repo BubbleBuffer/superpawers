@@ -57,22 +57,6 @@ export function readConfig(configPath: string): {
 }
 
 /**
- * Apply JSONC text edits and write back to file.
- * Returns true if the file was actually changed.
- */
-export function writeConfigChanges(
-  configPath: string,
-  originalText: string,
-  edits: Edit[]
-): boolean {
-  if (edits.length === 0) return false;
-  const modifiedText = applyEdits(originalText, edits);
-  if (modifiedText === originalText) return false;
-  fs.writeFileSync(configPath, modifiedText, "utf-8");
-  return true;
-}
-
-/**
  * Extract all model identifiers from a parsed config object.
  * Checks top-level model/small_model, agent.*.model, and
  * provider.*.models.* keys.
