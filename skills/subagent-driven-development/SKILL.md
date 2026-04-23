@@ -5,11 +5,11 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with review after each: spec compliance first, then code quality.
+Execute plan by dispatching fresh subagent per task, with review after each. Choose verification level appropriate to task complexity.
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
-**Core principle:** Fresh subagent per task + review cycle (spec then quality) = high quality, fast iteration
+**Core principle:** Fresh subagent per task + appropriate review and verification = high quality, fast iteration
 
 ## When to Use
 
@@ -43,20 +43,17 @@ digraph process {
         "Implementer subagent asks questions?" [shape=diamond];
         "Answer questions, provide context" [shape=box];
         "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
-        "Dispatch reviewer subagent (spec compliance)" [shape=box];
-        "Reviewer confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Dispatch reviewer subagent (code quality)" [shape=box];
-        "Reviewer approves code quality?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
+        "Choose review level (spec, quality, or both)" [shape=diamond];
+        "Dispatch reviewer subagent" [shape=box];
+        "Reviewer approves?" [shape=diamond];
+        "Implementer subagent fixes issues" [shape=box];
         "Mark task complete in todowrite" [shape=box];
     }
 
     "Read plan, extract all tasks with full text, note context, create todowrite" [shape=box];
     "More tasks remain?" [shape=diamond];
-    "Dispatch final reviewer subagent for entire implementation" [shape=box];
-    "Dispatch verifier subagent" [shape=box];
-    "Verifier reports PASS?" [shape=diamond];
+    "Verify entire implementation (inline or subagent)" [shape=box];
+    "Verification passes?" [shape=diamond];
     "Use superpawers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
     "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [shape=box style=filled fillcolor=lightyellow];
     "Exit" [shape=doublecircle];
@@ -64,22 +61,18 @@ digraph process {
     "Read plan, extract all tasks with full text, note context, create todowrite" -> "Dispatch implementer subagent";
     "Dispatch implementer subagent" -> "Implementer subagent status?";
     "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch reviewer subagent (spec compliance)";
-    "Dispatch reviewer subagent (spec compliance)" -> "Reviewer confirms code matches spec?";
-    "Reviewer confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch reviewer subagent (spec compliance)" [label="re-review"];
-    "Reviewer confirms code matches spec?" -> "Dispatch reviewer subagent (code quality)" [label="yes"];
-    "Dispatch reviewer subagent (code quality)" -> "Reviewer approves code quality?";
-    "Reviewer approves code quality?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch reviewer subagent (code quality)" [label="re-review"];
-    "Reviewer approves code quality?" -> "Mark task complete in todowrite" [label="yes"];
+    "Implementer subagent implements, tests, commits, self-reviews" -> "Choose review level (spec, quality, or both)";
+    "Choose review level (spec, quality, or both)" -> "Dispatch reviewer subagent";
+    "Dispatch reviewer subagent" -> "Reviewer approves?";
+    "Reviewer approves?" -> "Implementer subagent fixes issues" [label="no"];
+    "Implementer subagent fixes issues" -> "Dispatch reviewer subagent" [label="re-review"];
+    "Reviewer approves?" -> "Mark task complete in todowrite" [label="yes"];
     "Mark task complete in todowrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent" [label="yes"];
-    "More tasks remain?" -> "Dispatch final reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final reviewer subagent for entire implementation" -> "Dispatch verifier subagent";
-    "Dispatch verifier subagent" -> "Verifier reports PASS?";
-    "Verifier reports PASS?" -> "Use superpawers:finishing-a-development-branch" [label="yes"];
-    "Verifier reports PASS?" -> "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [label="fail"];
+    "More tasks remain?" -> "Verify entire implementation (inline or subagent)" [label="no"];
+    "Verify entire implementation (inline or subagent)" -> "Verification passes?";
+    "Verification passes?" -> "Use superpawers:finishing-a-development-branch" [label="yes"];
+    "Verification passes?" -> "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" [label="fail"];
     "Human recovery options (structured: 1. Plan recovery, 2. Discard, 3. Keep)" -> "Exit" [label="after recovery"];
 }
 ```
@@ -99,11 +92,78 @@ Use the least powerful model that can handle each role to conserve cost and incr
 - Touches multiple files with integration concerns → standard model
 - Requires design judgment or broad codebase understanding → most capable model
 
+## Task Grouping
+
+The plan defines tasks. You decide how to dispatch them.
+
+**One subagent = one dispatch unit.** A dispatch unit may cover one or many plan tasks. Use your judgment:
+
+**Combine into one dispatch when:**
+- Plan explicitly says tasks must be done together (e.g., "combine with Task N")
+- Tasks share state (same files, same API surface)
+- Doing them separately would break tests
+
+**Keep separate when:**
+- Tasks are truly independent (different files, no shared state)
+- One task's output is another's input (sequential dependency)
+- You want review gates between tasks (complex logic worth checking incrementally)
+
+**Principle:** The subagent should be able to succeed without needing context from a concurrent task. If two tasks touch the same code, they're probably one dispatch unit.
+
+## Verification Strategy
+
+Choose the right verification level based on task complexity. The goal is always to verify — but *how* you verify should match the task.
+
+### Per-task review (after implementer completes)
+
+**Spec compliance review** (dispatch reviewer subagent):
+- Task has non-trivial requirements or acceptance criteria
+- Implementation spans multiple files or concepts
+- Risk of overbuilding or underbuilding
+
+**Code quality review** (dispatch reviewer subagent):
+- Task introduces new patterns or abstractions
+- Code will be foundational for future tasks
+- Complexity warrants a second set of eyes
+
+**Combined spec+quality review:**
+- Use for tasks that are both complex and foundational
+
+**Skip formal review when:**
+- Task is mechanical (rename, delete files, move code)
+- Implementation is trivially correct (1-2 line change)
+- Implementer's self-review + your quick glance is sufficient
+
+**Batched review for small task groups:**
+- When you've completed several trivial/mechanical tasks in sequence without individual reviews
+- Dispatch one reviewer covering all of them together
+- More efficient than N separate reviews, same coverage
+- Review loop still applies: if the batched review finds issues, fix → re-review
+
+**Guideline:** Review your judgment. When in doubt, review. The cost of a review is low; the cost of shipping a bug is high.
+
+### Final verification (after all tasks)
+
+Choose based on implementation scope:
+
+**Inline verification** (you run commands via Bash):
+- Standard test/lint/typecheck commands cover the changes
+- No complex environment setup needed
+- You understand what to run and what to expect
+
+**Verifier subagent** (dispatch fresh agent):
+- Multi-task integration testing needed
+- Complex test environment or dependencies
+- You're unsure what test commands cover the full changeset
+- Changes span many files and you want independent confirmation
+
+**Do not** skip final verification entirely. But you may choose *how* to verify.
+
 ## Handling Implementer Status
 
 Implementer subagents report one of four statuses. Handle each appropriately:
 
-**DONE:** Proceed to spec compliance review.
+**DONE:** Proceed to review (or mark complete if review not needed for this task).
 
 **DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
 
@@ -142,7 +202,9 @@ Agent base prompts live in `agents/`. Skills provide task-specific context when 
 [Then inject implementer.template.md content]
 ```
 
-## Example Workflow
+## Example Workflows
+
+### Standard workflow (complex tasks)
 
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
@@ -212,11 +274,70 @@ Reviewer: ✅ Approved
 ...
 
 [After all tasks]
-[Dispatch final reviewer for entire implementation]
-Final reviewer: All requirements met, ready to merge
+[Assess verification needs: standard test suite covers changes]
+[Run inline verification: npm test, npm run lint — all pass]
+→ Verification PASS
+
+[Use superpawers:finishing-a-development-branch]
 
 Done!
 ```
+
+### Grouped tasks workflow (coupled plan tasks)
+
+Plan has 6 tasks. Tasks 1-2 are additive (new files only). Tasks 3-5 are tightly coupled — the plan says "combine Tasks 3-5 into one commit to keep tests green." Task 6 is verification.
+
+```
+[Read plan, extract all 6 tasks]
+[Create todowrite: Task 1, Task 2, Tasks 3-5 (combined), Task 6]
+
+Task 1: Create AgentHandler protocol (new files only)
+
+[Dispatch implementer with Task 1 text + context]
+Implementer: DONE. Created agents/__init__.py, agents/handler.py
+
+[Task is mechanical — skip formal review, quick glance suffices]
+[Mark Task 1 complete]
+
+Task 2: Create chat agent implementation (new files only)
+
+[Dispatch implementer with Task 2 text + context]
+Implementer: DONE. Created agents/chat/__init__.py, state.py, nodes.py, handler.py
+
+[Batch review: Task 1 + Task 2 together since both are trivial additive work]
+[Dispatch reviewer covering both tasks: spec compliance]
+Reviewer: ✅ Both match spec
+
+[Mark Task 2 complete]
+
+Tasks 3-5: Genericize engine, refactor runtime, delete old files (combined)
+
+[Plan says these must be done together — dispatch as one unit]
+[Dispatch implementer with Tasks 3, 4, AND 5 text + all relevant context]
+Implementer:
+  - Genericized engine API
+  - Updated bootstrap/service to use new API
+  - Deleted old files
+  - Updated all tests
+  - All tests passing
+  - Committed
+
+[Dispatch spec compliance reviewer for the combined change]
+Reviewer: ✅ All three tasks match their specs
+
+[Dispatch code quality reviewer]
+Reviewer: ✅ Approved
+
+[Mark Tasks 3-5 complete]
+
+Task 6: Final verification
+[Run inline verification: all tests pass]
+```
+
+Key differences from the standard workflow:
+- **Task grouping:** Tasks 3-5 become one dispatch because the plan says to combine them
+- **Review batching:** Tasks 1-2 get one combined review instead of two separate ones
+- **Skip review judgment:** Task 1 was so trivial it could have skipped review entirely; batching with Task 2 was pragmatic
 
 ## Advantages
 
@@ -234,33 +355,39 @@ Done!
 
 **Quality gates:**
 - Self-review catches issues before handoff
-- Review cycle: spec compliance, then code quality
-- Review loops ensure fixes actually work
+- Review cycle calibrated to task complexity
+- Verification matches implementation scope
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
 
 **Cost:**
-- More subagent invocations (implementer + 2 reviews per task)
+- Subagent invocations scale with task complexity (not one-size-fits-all)
 - Controller does more prep work (extracting all tasks upfront)
-- Review loops add iterations
+- Review loops add iterations only when needed
 - But catches issues early (cheaper than debugging later)
 
 ## Red Flags
 
+**Always:**
+- Verify every task — but match verification to complexity
+- Review before marking complete — use your judgment on depth
+- Fix issues before moving on — don't accumulate technical debt
+
 **Never:**
 - Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR code quality)
-- Proceed with unfixed issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
 - Make subagent read plan file (provide full text instead)
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)
-- Accept "close enough" on spec compliance (spec reviewer found issues = not done)
-- Skip review loops (reviewer found issues = implementer fixes = review again)
-- Let implementer self-review replace actual review (both are needed)
-- **Start code quality review before spec compliance is ✅** (wrong order)
-- Move to next task while either review has open issues
+- Skip re-review when reviewer found issues (fix → review again, always)
 - **Fall back to inline execution when subagent fails** (STOP and present human recovery options instead)
+
+**Guidelines (use judgment):**
+- Spec compliance before code quality is the right order, but for simple tasks a combined review is fine
+- When in doubt, review. The cost is low; the cost of shipping bugs is high.
+- For trivially mechanical tasks, implementer self-review + your glance may suffice
+- For a batch of small tasks, one combined review is more efficient than N separate ones
+- Combine tightly coupled plan tasks into one dispatch (see Task Grouping section)
 
 **If subagent asks questions:**
 - Answer clearly and completely
@@ -287,5 +414,3 @@ Done!
 
 **Subagents should use:**
 - **superpawers:test-driven-development** - Subagents follow TDD for each task
-
-
