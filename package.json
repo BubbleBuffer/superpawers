@@ -1,12 +1,13 @@
 {
   "name": "@bubblebuffer/superpawers",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "description": "Quick setup for SuperPawers skills and markdown agents for OpenCode",
   "bin": {
     "superpawers": "./dist/main.js"
   },
   "main": "./dist/main.js",
   "files": [
+    "README.md",
     "dist/",
     "agents/",
     "skills/"
@@ -15,8 +16,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node ./scripts/build.cjs",
+    "cli:local": "npm run build && node ./dist/main.js",
+    "smoke:package": "node ./scripts/smoke-package.cjs",
     "test": "vitest run",
+    "prepack": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

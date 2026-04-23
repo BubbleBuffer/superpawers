@@ -161,7 +161,11 @@ async function runInstall(options: CliOptions): Promise<void> {
   const workspace = await chooseWorkspace(options, available);
   const targets = getTargetPaths({
     ...options,
-    mode: workspace.type === "global" ? "global" : "local",
+    mode: options.path
+      ? null
+      : workspace.type === "global"
+        ? "global"
+        : "local",
   });
 
   output.log(`Installing to ${targets.root}...`);
@@ -192,7 +196,11 @@ async function runUninstall(options: CliOptions): Promise<void> {
   const workspace = await chooseWorkspace(options, available);
   const targets = getTargetPaths({
     ...options,
-    mode: workspace.type === "global" ? "global" : "local",
+    mode: options.path
+      ? null
+      : workspace.type === "global"
+        ? "global"
+        : "local",
   });
 
   if (!options.yes) {

@@ -9,7 +9,13 @@ This removes some of Superpowers' "generalist"-focused implementations and narro
 npx @bubblebuffer/superpawers
 ```
 
-If you are working from a local checkout of this repository, run `node ./superpawers` instead so npm does not resolve the workspace package name before installing the published bin.
+If you are working from a local checkout of this repository, use the local CLI script instead of `npx`:
+
+```bash
+npm run cli:local -- --yes --path /path/to/project
+```
+
+Running `npx @bubblebuffer/superpawers` from inside this repository does not exercise the published npm package path and is not the supported local-development flow.
 
 This will:
 1. Detect a global OpenCode workspace in `~/.config/opencode/` or a project workspace in the current repository
@@ -26,6 +32,16 @@ Project config is read from `opencode.json` or `opencode.jsonc` in the project r
 - `--path <path>` - Use custom workspace path
 - `--yes` - Skip prompts and use safe defaults (leave models unset)
 - `--uninstall` - Remove installed files and legacy config entries
+
+## Release Verification
+
+Before publishing a release, run:
+
+```bash
+npm test
+npm run smoke:package
+npm pack --dry-run
+```
 
 ## Model Selection
 
