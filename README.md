@@ -83,7 +83,6 @@ You are a SuperPawers implementer subagent.
 | `superpawers-implementer` | Task implementation with TDD |
 | `superpawers-reviewer` | Spec compliance and code quality review |
 | `superpawers-verifier` | Independent test/lint/typecheck verification |
-| `superpawers-planner` | Breaks down complex problems into tasks |
 
 ## The Workflow
 

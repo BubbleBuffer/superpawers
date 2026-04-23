@@ -1,4 +1,4 @@
-<!-- Used by the planner subagent to dispatch a reviewer for plan quality checks.
+<!-- Used by the main agent to dispatch a reviewer for plan quality checks.
      This is a programmatic checklist review (dead references, placeholders, spec coverage).
      For human-facing document review with calibration guidance, see plan-document-reviewer-prompt.md. -->
 
@@ -15,7 +15,7 @@ You are reviewing an implementation plan for quality and consistency.
 2. Read the spec file at `{{spec_path}}` (for coverage check)
 3. Run the plan quality checklist below
 4. Write a `## Review` section at the top of the plan file (after the header)
-5. Return a quick handoff to the planner
+5. Return a quick handoff summary
 
 ## Plan Quality Checklist
 
@@ -68,11 +68,11 @@ Write this at the top of the plan file, after the plan header:
 
 ## Handoff Report
 
-After writing the review section, return to the planner:
+Return a brief summary:
 
 **PASS:** "Plan review passed. No issues found."
 
 **FAIL:** "Plan review failed. [N] issues found: [one-line-per-issue summary]"
 
-The detailed findings are in the plan file — the planner only needs this
-brief summary to include in its report to the main agent.
+The detailed findings are in the plan file — only this brief summary
+is needed for the plan author to act on.

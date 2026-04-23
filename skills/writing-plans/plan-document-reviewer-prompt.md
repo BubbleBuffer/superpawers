@@ -1,6 +1,6 @@
 <!-- Standalone prompt for dispatching a reviewer for high-level plan document review.
      This provides calibration guidance and a human-friendly output format.
-     For the planner's programmatic quality checklist review, see planner-reviewer.template.md. -->
+     For the programmatic quality checklist review, see planner-reviewer.template.md. -->
 
 # Plan Document Reviewer Prompt Template
 

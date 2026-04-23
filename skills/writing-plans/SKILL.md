@@ -22,42 +22,64 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem or recommend the User spend some more time brainstorming. Each plan should produce working, testable software on its own.
 
-## Planner Dispatch
+## Process
 
-Dispatch the planner agent to investigate the codebase and produce the plan:
+You write the plan directly, using researcher subagents to explore the codebase as needed.
+
+### 1. Research the Codebase
+
+Dispatch researcher subagents to understand the codebase before writing:
 
 ```
 Task(
-  "Create implementation plan for [feature name]",
-  subagent_type="superpawers-planner",
-  prompt=<rendered planner.template.md with spec path, scope, constraints>
+  "Explore [area]",
+  subagent_type="superpawers-researcher",
+  prompt="Find files handling [feature area]. Map key functions and locations."
 )
 ```
 
-The planner will:
-1. Dispatch researcher subagents to explore the codebase
-2. Write the plan file following the format below
-3. Dispatch a reviewer subagent to check plan quality
-4. Report back with status, plan path, and review result
+Dispatch multiple researchers in parallel for independent questions. Examples:
 
-### Prompt Templates
+- "Find files handling [feature area]. Map key functions and locations."
+- "Trace data flow from [entry] to [output]. Report file:line references."
+- "What testing patterns does this codebase use? Find example tests."
 
-Templates live in this skill's directory:
-- `planner.template.md` — context for planner dispatch
-- `planner-reviewer.template.md` — context for the reviewer the planner dispatches
+**Wait for ALL researchers to report before synthesizing.**
 
-### Handling Planner Status
+### 2. Write the Plan
 
-**DONE (review PASS):**
+Write the plan file following the format below. Use exact file paths, complete code in every step, exact commands with expected output.
+
+### 3. Review the Plan
+
+Dispatch a reviewer subagent to check plan quality:
+
+```
+Task(
+  "Review implementation plan",
+  subagent_type="superpawers-reviewer",
+  prompt=<rendered planner-reviewer.template.md with plan path, spec path>
+)
+```
+
+The reviewer will:
+1. Read the plan and spec
+2. Run the plan quality checklist
+3. Write a `## Review` section into the plan file
+4. Return PASS/FAIL + one-line summary
+
+### Handling Review Results
+
+**PASS:**
 Present plan summary to user and offer execution choice. Do not read
 the full plan — show the path, goal, task count, and key decisions.
 
-**DONE (review FAIL, simple issues):**
+**FAIL (simple issues):**
 Simple issues are: typos, naming inconsistencies, dead references,
 missing specificity. Fix these directly in the plan file, then present
 summary and offer execution choice.
 
-**DONE (review FAIL, architectural/spec issues):**
+**FAIL (architectural/spec issues):**
 Architectural issues indicate overscoping or unclear specs — things
 that require design judgment. Present the findings to the user:
 
@@ -67,19 +89,11 @@ that require design judgment. Present the findings to the user:
 > These seem to stem from [ambiguous spec / scope overlap / unclear requirements].
 > What are your thoughts?"
 
-Discuss with the user, then either:
-- Fix the plan directly based on their answers, or
-- Re-dispatch the planner with clarified scope/constraints
+Discuss with the user, then fix the plan directly based on their answers.
 
-**NEEDS_CONTEXT:**
-The planner has specific questions. Ask the user, then re-dispatch
-the planner with the answers.
+### Prompt Templates
 
-**BLOCKED:**
-The planner couldn't proceed. Present blocker to user with options:
-1. **Re-scope:** Narrow the spec and re-dispatch
-2. **Provide context:** Answer the blocker and re-dispatch
-3. **Abandon:** Drop this approach
+- `planner-reviewer.template.md` — context for dispatching a reviewer for plan quality checks
 
 ## File Structure
 

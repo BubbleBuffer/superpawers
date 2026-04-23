@@ -9,7 +9,6 @@ export const AGENT_FILES = [
   "superpawers-implementer.system.md",
   "superpawers-reviewer.system.md",
   "superpawers-verifier.system.md",
-  "superpawers-planner.system.md",
 ];
 
 export const AGENT_IDS = AGENT_FILES.map((file) =>
